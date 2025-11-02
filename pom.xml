@@ -12,7 +12,8 @@
 
     <modules>
         <module>anahata-ai</module>
-        <!-- Add other modules like anahata-ai-gemini here as they are created -->
+        <module>anahata-ai-gemini</module>
+        <module>anahata-ai-swing</module>
     </modules>
 
     <properties>

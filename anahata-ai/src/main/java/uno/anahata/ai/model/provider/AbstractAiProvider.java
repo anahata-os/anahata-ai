@@ -1,0 +1,152 @@
+package uno.anahata.ai.model.provider;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.model.config.AiConfig;
+import uno.anahata.ai.model.provider.model.AbstractAiModel;
+
+/**
+ * The abstract base class for all AI model providers, now with model caching.
+ *
+ * @author anahata
+ */
+@Getter
+@Slf4j
+public abstract class AbstractAiProvider {
+
+    protected final AiConfig config;
+    private final String providerId;
+    private int round = 0;
+    
+    // Transient cache for the models
+    private transient List<? extends AbstractAiModel> models;
+
+    public AbstractAiProvider(String providerId, AiConfig config) {
+        this.providerId = providerId;
+        this.config = config;
+    }
+
+    /**
+     * Fetches the list of all models available from the provider's API.
+     * This method is intended to be called by the caching mechanism.
+     *
+     * @return A list of provider-specific {@link AbstractAiModel} objects.
+     */
+    public abstract List<? extends AbstractAiModel> listModels();
+
+    /**
+     * Gets the list of models, using a lazy-loaded cache.
+     * If the cache is empty, it calls {@link #listModels()} to populate it.
+     * If fetching fails, it returns an empty list and caches it to prevent repeated failures.
+     *
+     * @return The cached list of models.
+     */
+    public synchronized List<? extends AbstractAiModel> getModels() {
+        if (this.models == null) {
+            log.info("Model cache is empty for provider '{}'. Loading from API...", getProviderId());
+            try {
+                this.models = listModels();
+            } catch (Exception e) {
+                log.error("Failed to load models for provider '{}'. Caching empty list to prevent repeated errors.", getProviderId(), e);
+                this.models = Collections.emptyList();
+            }
+        }
+        return this.models;
+    }
+
+    /**
+     * Clears the local model cache and forces a reload from the API on the next call to {@link #getModels()}.
+     *
+     * @return The newly fetched list of models.
+     */
+    public synchronized List<? extends AbstractAiModel> refreshModels() {
+        log.info("Refreshing model cache for provider '{}'...", getProviderId());
+        this.models = null; // Clear the cache
+        return getModels();
+    }
+
+    /**
+     * Gets a set of all unique supported actions across all models offered by this provider, using the cached model list.
+     * @return A set of unique action strings.
+     */
+    public Set<String> getAllSupportedActions() {
+        return getModels().stream()
+                .flatMap(model -> model.getSupportedActions().stream())
+                .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    /**
+     * Gets the API key for the specific provider implementation using a round-robin selection from the loaded key pool.
+     * The key pool is reloaded from the file system on every call.
+     * @return The API key.
+     */
+    public String getApiKey() {
+        List<String> keyPool = loadKeyPool();
+        if (keyPool.isEmpty()) {
+            return null;
+        }
+        // Round-robin key selection
+        int nextIdx = round++ % keyPool.size();
+        String key = keyPool.get(nextIdx);
+        log.debug("Using API key from pool (index {}). Key ends with: {}", nextIdx, key.substring(key.length() - 5));
+        return key;
+    }
+
+    /**
+     * Gets the provider-specific storage directory within the main AI work directory.
+     * @return The path to the provider's directory.
+     */
+    public Path getProviderDirectory() {
+        return config.getWorkDirectory().resolve(getProviderId());
+    }
+
+    private List<String> loadKeyPool() {
+        Path providerDir = getProviderDirectory();
+        Path keysFilePath = providerDir.resolve("api_keys.txt");
+
+        if (!Files.exists(providerDir)) {
+            try {
+                Files.createDirectories(providerDir);
+            } catch (IOException e) {
+                log.error("Failed to create provider directory at: {}", providerDir, e);
+                return Collections.emptyList();
+            }
+        }
+
+        if (!Files.exists(keysFilePath)) {
+            log.warn("API key file not found at {}. Please create it with your API key(s).", keysFilePath);
+            return Collections.emptyList();
+        }
+
+        try {
+            List<String> keys = Files.lines(keysFilePath)
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.startsWith("//"))
+                    .map(line -> {
+                        int commentIndex = line.indexOf("//");
+                        return (commentIndex != -1) ? line.substring(0, commentIndex).trim() : line;
+                    })
+                    .collect(Collectors.toList());
+
+            if (keys.isEmpty()) {
+                log.error("No API keys found in {}. Cannot initialize provider.", keysFilePath);
+                return Collections.emptyList();
+            }
+
+            log.debug("Loaded {} API key(s) for provider '{}' from {}.", keys.size(), getProviderId(), keysFilePath);
+            return keys;
+
+        } catch (IOException e) {
+            log.error("Failed to load API keys from {}. Cannot initialize provider.", keysFilePath, e);
+            return Collections.emptyList();
+        }
+    }
+}

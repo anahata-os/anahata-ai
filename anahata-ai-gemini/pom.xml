@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>uno.anahata</groupId>
+        <artifactId>anahata-ai-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    
+    <artifactId>anahata-ai-gemini</artifactId>
+    <packaging>jar</packaging>
+    
+    <name>Anahata AI Gemini Implementation</name>
+    <description>The Gemini-specific implementation of the Anahata AI core APIs.</description>
+    
+    <dependencies>
+        <!-- Core Anahata AI API -->
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-ai</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- Google Gemini API Client -->
+        <dependency>
+            <groupId>com.google.genai</groupId>
+            <artifactId>google-genai</artifactId>
+            <version>1.23.0</version>
+        </dependency>
+        
+        <!-- Standard Dependencies -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        
+        <!-- Added for testing to enable console logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.13</version>
+            <scope>runtime</scope>
+        </dependency>
+        
+    </dependencies>
+    
+</project>

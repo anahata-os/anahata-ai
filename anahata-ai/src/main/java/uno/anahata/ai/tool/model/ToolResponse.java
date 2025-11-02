@@ -10,5 +10,5 @@ import java.util.Map;
  * @param name The name of the function that was called.
  * @param content A map representing the structured output of the tool.
  */
-public record AnahataToolResponse(String name, Map<String, Object> content) {
+public record ToolResponse(String name, Map<String, Object> content) {
 }

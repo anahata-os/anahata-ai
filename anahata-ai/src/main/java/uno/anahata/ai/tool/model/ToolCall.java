@@ -9,5 +9,5 @@ import java.util.Map;
  * @param name The name of the function to be called.
  * @param args A map of argument names to their corresponding values.
  */
-public record AnahataToolCall(String name, Map<String, Object> args) {
+public record ToolCall(String name, Map<String, Object> args) {
 }
