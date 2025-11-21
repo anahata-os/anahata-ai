@@ -2,6 +2,8 @@ package uno.anahata.ai.model.core;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 
 /**
@@ -9,7 +11,18 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
  *
  * @author Anahata
  */
+@Getter
+@Setter
 public class ModelMessage extends AbstractMessage {
+    
+    /** The number of tokens used by this message. */
+    private int tokenCount;
+    
+    public ModelMessage(List<AbstractPart> parts, int tokenCount) {
+        setParts(parts);
+        this.tokenCount = tokenCount;
+    }
+    
     @Override
     public Role getRole() {
         return Role.MODEL;

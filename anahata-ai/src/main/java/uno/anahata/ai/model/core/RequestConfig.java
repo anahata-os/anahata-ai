@@ -32,7 +32,17 @@ public class RequestConfig {
      */
     private final Integer maxOutputTokens;
     
-    // TODO: Add topK, topP, etc.
+    /**
+     * The maximum number of tokens to generate in the response.
+     * The model considers only the **K** most likely next tokens.
+     */
+    private final Integer topK;
+    
+    /**
+     * The maximum number of tokens to generate in the response.
+     * The model considers the smallest set of tokens whose cumulative probability exceeds the threshold **P**.
+     */
+    private final Float topP;
     
     /**
      * A flag to indicate whether the model should include its internal "thoughts" or reasoning process in the output.

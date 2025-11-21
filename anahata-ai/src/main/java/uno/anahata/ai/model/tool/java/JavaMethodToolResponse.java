@@ -8,6 +8,7 @@ import java.lang.reflect.Parameter;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.tool.AiToolException;
@@ -19,6 +20,7 @@ import uno.anahata.ai.tool.AiToolException;
  * @author anahata
  */
 @Getter
+@Slf4j
 public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolCall> {
 
     /**
@@ -73,8 +75,15 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
             
-            setError(getStackTraceAsString(cause));
+            log.error("Tool execution failed for: {}", getCall().getName(), cause);
+
+            if (cause instanceof AiToolException) {
+                setError(cause.getMessage());
+            } else {
+                setError(getStackTraceAsString(cause));
+            }
             setStatus(ToolExecutionStatus.FAILED);
+            
         } finally {
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);
         }

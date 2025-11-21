@@ -1,52 +1,47 @@
-# Anahata AI Project Plan
+# Anahata AI Core Framework
 
-This document outlines the vision, architecture, and development plan for the `anahata-ai` project. This project serves as the core, model-agnostic AI framework.
+This document outlines the vision and architecture of the `anahata-ai` project, which serves as the core, model-agnostic AI framework.
 
 ## 1. Vision & Goal
 
-The primary goal is to create a robust, extensible, and model-agnostic AI framework in Java. This core library will define a standard set of interfaces and models for interacting with Large Language Models (LLMs), allowing developers to build AI-powered applications without being locked into a specific provider (e.g., Google Gemini, OpenAI, etc.).
+The primary goal is to create a robust, extensible, and model-agnostic AI framework in Java. This core library defines a standard set of interfaces and a rich domain model for interacting with Large Language Models (LLMs), allowing developers to build AI-powered applications without being locked into a specific provider (e.g., Google Gemini, OpenAI, Anthropic).
 
-This project will contain the foundational logic, while provider-specific implementations will be developed in separate "adapter" projects (e.g., `anahata-ai-gemini`).
+This project contains the foundational logic, while provider-specific implementations are developed in separate "adapter" projects (e.g., `anahata-ai-gemini`).
 
-## 2. Architectural Principles (Validated)
+## 2. Core Architecture
 
-Our architecture is founded on established software design patterns, validated by research into existing AI frameworks like LangChain4j and Spring AI.
+The framework is built on a sophisticated, decoupled architecture centered around a rich, model-agnostic domain.
 
-*   **The Adapter Pattern:** This is our core principle. Provider-specific modules (like `anahata-ai-gemini`) will act as **Adapters**. They will be responsible for translating the provider's unique API and data types (e.g., a Google `FunctionCall`) into the standardized, internal models defined in this core `anahata-ai` project. This decouples our application logic from any single vendor.
+### 2.1. Model Agnosticism (`uno.anahata.ai.model.*`)
 
-*   **Decoupling and Portability:** By defining a standard interface for chat, tool execution, and context management, we can easily swap LLM providers. This is a best practice highlighted by major frameworks and ensures long-term flexibility.
+The foundation of the framework is a set of abstract models that create a standardized language for all AI interactions.
 
-*   **Future-Proofing with Factory/Strategy Patterns:** As the project grows, we can incorporate other patterns:
-    *   **Factory Pattern:** To dynamically create clients for different models (`ModelFactory.create("gemini")`).
-    *   **Strategy Pattern:** To select the best model for a specific task on-the-fly.
+-   **Provider Abstraction (`.provider`):**
+    -   `AbstractAiProvider`: The key extension point for new AI providers. Each adapter module must provide a concrete implementation of this class.
+    -   `AbstractModel`: A standard representation of an AI model's capabilities, decoupled from any specific provider's API.
 
-## 3. Proposed Core Package Structure
+-   **Core Conversation Model (`.core`):**
+    -   `Request` & `Response`: Standardized, immutable objects for all generateContent calls.
+    -   `AbstractMessage`: The base class for all messages, with type-safe subclasses `UserMessage`, `ModelMessage`, and `ToolMessage`.
+    -   `AbstractPart`: The base for message content, allowing messages to be composed of multiple parts (e.g., `TextPart`, `AbstractToolCall`).
 
-Based on our discussions, the initial package structure will be:
+### 2.2. V2 Tool Framework (`uno.anahata.ai.tool` & `uno.anahata.ai.model.tool`)
 
-*   `uno.anahata.ai.chat`: Contains the core logic for managing a conversation.
-    *   `model`: Will house standardized data models like `AnahataChatMessage`.
-*   `uno.anahata.ai.tool`: The central hub for defining and executing tools.
-    *   `execution`: For the `FunctionExecutor` and related classes.
-    *   `conversion`: For the `TypeConverter` responsible for serializing return types.
-    *   `model`: For standardized tool-related models like `AnahataFunctionInfo` and `ExecutedToolCall`.
-*   `uno.anahata.ai.context`: For managing the stateful "Active Workspace" and context-related logic.
+The framework includes a powerful, reflection-based system for defining and executing tools.
 
-## 4. Immediate Development Roadmap
+-   **Annotation-Driven:** Tools are defined in plain Java using `@AiToolkit`, `@AiTool`, and `@AIToolParam` annotations.
+-   **Rich Domain Model:** The framework parses annotated classes into a rich object model (`JavaObjectToolkit`, `JavaMethodTool`) that encapsulates all metadata, including Java `Method` and `Type` information.
+-   **Type-Safe Execution:** A `ToolManager` orchestrates the tool lifecycle, using the rich domain model to perform validation and type-safe conversion of arguments from the model's JSON format into Java objects before execution.
+-   **Automated Schema Generation:** A `SchemaProvider` uses reflection to generate detailed, OpenAPI 3-compliant JSON schemas for all tools, ensuring the model receives a precise definition of their capabilities.
 
-**Phase 1: Project Setup**
-1.  **Configure `pom.xml`:**
-    *   Set the Java version to 21.
-    *   Add dependencies for `lombok` and `swagger-annotations`.
-    *   Critically, configure the `maven-compiler-plugin` with the `-parameters` argument to preserve method parameter names for the tool framework.
-2.  **Create Core Packages:** Create the directory structure outlined above.
+### 2.3. Configuration (`uno.anahata.ai.config`)
 
-**Phase 2: Initial Class Implementation**
-1.  Begin migrating and refactoring the core, non-Gemini-specific classes from `gemini-java-client` into their new homes within `anahata-ai`.
-2.  Develop the initial standardized data models (e.g., `AnahataChatMessage`).
+Configuration is handled through a layered set of objects:
 
-## 5. References & Citations
+-   `AiConfig`: Manages global and application-specific settings, such as working directories.
+-   `ChatConfig`: Holds the configuration for a single chat session, including the model ID and registered tool classes.
+-   `Preferences`: A serializable POJO for persisting user settings (like tool permissions) to disk using the Kryo serializer.
 
-*   **Adapter Pattern:** [Refactoring Guru: Adapter Pattern](https://refactoring.guru/design-patterns/adapter)
-*   **LangChain4j:** [Official Documentation](https://docs.langchain4j.dev/) - An example of a model-agnostic Java AI framework.
-*   **Spring AI:** [Official Project Page](https://spring.io/projects/spring-ai) - Demonstrates the industry trend towards portable AI APIs.
+### 2.4. Serialization (`uno.anahata.ai.internal.kryo`)
+
+-   **Kryo:** The framework uses the high-performance Kryo library for serializing `Preferences` and entire chat sessions to disk. A thread-safe `KryoUtils` class manages Kryo instances.

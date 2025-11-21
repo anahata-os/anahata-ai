@@ -85,9 +85,6 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> {
             : ToolPermission.APPROVE_ALWAYS;
             
         String returnTypeSchema = SchemaProvider.generateInlinedSchemaString(method.getGenericReturnType());
-        if (returnTypeSchema == null) {
-            returnTypeSchema = "{}"; // Represents void or un-schema-able type
-        }
 
         return new JavaMethodTool(
             toolName,

@@ -34,7 +34,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     private final Method method;
 
     /** The singleton instance of the toolkit class, used for invoking non-static methods. */
-    private final transient Object toolInstance;
+    private final Object toolInstance;
 
     public JavaMethodTool(
             @NonNull String name,

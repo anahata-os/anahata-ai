@@ -86,27 +86,32 @@ public abstract class AbstractTool<P extends ToolParameter, C extends AbstractTo
                 return null;
             }
 
-            // 2. Get the schema for the actual result (e.g., String, FileInfo)
-            String resultSchemaJson = getReturnTypeJsonSchema();
-            if (resultSchemaJson == null) {
-                return baseSchemaJson; // No result schema to inject, return the base schema as-is.
-            }
-
-            // 3. Parse both schemas
+            // 2. Parse the base schema into a mutable Map
             Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
             Map<String, Object> baseSchemaMap = GSON.fromJson(baseSchemaJson, mapType);
-            Map<String, Object> resultSchemaMap = GSON.fromJson(resultSchemaJson, mapType);
 
-            // 4. Surgically inject the result schema into the 'result' property
+            // 3. Get the schema for the actual result (e.g., String, FileInfo)
+            String resultSchemaJson = getReturnTypeJsonSchema();
+            
+            // 4. Get the properties map from the base schema, failing fast if it's missing.
             Object propertiesObj = baseSchemaMap.get("properties");
-            if (propertiesObj instanceof Map) {
-                Map<String, Object> propertiesMap = (Map<String, Object>) propertiesObj;
+            if (!(propertiesObj instanceof Map)) {
+                throw new IllegalStateException("SchemaProvider generated a base schema without a 'properties' map for type: " + responseType.getTypeName());
+            }
+            Map<String, Object> propertiesMap = (Map<String, Object>) propertiesObj;
+
+            if (resultSchemaJson == null) {
+                // This is a void method. Surgically remove the 'result' property.
+                propertiesMap.remove("result");
+            } else {
+                // This is a non-void method. Surgically inject the result schema.
+                Map<String, Object> resultSchemaMap = GSON.fromJson(resultSchemaJson, mapType);
                 if (propertiesMap.containsKey("result")) {
                     propertiesMap.put("result", resultSchemaMap);
                 }
             }
 
-            // 5. Return the final, combined schema string
+            // 5. Return the final, modified schema string
             return GSON.toJson(baseSchemaMap);
 
         } catch (Exception e) {
