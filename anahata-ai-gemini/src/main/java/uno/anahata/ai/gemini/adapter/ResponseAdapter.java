@@ -15,7 +15,7 @@ import uno.anahata.ai.tool.ToolManager;
  * A focused adapter responsible for converting a Google GenAI GenerateContentResponse
  * into our model-agnostic Response object.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResponseAdapter {

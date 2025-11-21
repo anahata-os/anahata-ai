@@ -4,7 +4,7 @@ package uno.anahata.ai.model.tool;
  * Represents the user's interactive, one-time choice for a specific tool invocation
  * within the UI prompt.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public enum ToolPermission {
     /** Approve the invocation for this turn only. */

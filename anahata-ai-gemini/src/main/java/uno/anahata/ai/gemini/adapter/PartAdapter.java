@@ -17,7 +17,7 @@ import uno.anahata.ai.tool.ToolManager;
 
 /**
  * A focused adapter for bidirectional conversion between Anahata and Google GenAI Part objects.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

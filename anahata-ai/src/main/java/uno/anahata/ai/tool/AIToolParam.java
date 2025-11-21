@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * Provides a description for a parameter of a method marked with {@link AIToolMethod}.
  * This is essential for the model to understand how to use the tool correctly.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

@@ -8,7 +8,7 @@ import uno.anahata.ai.model.core.Response;
  * Base class for all AI models, defining a common set of capabilities.
  * Provider-specific implementations will extend this class.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public abstract class AbstractModel {
 

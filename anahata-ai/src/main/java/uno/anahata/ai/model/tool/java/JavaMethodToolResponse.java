@@ -17,7 +17,7 @@ import uno.anahata.ai.tool.AiToolException;
  * A rich POJO that captures the complete and final outcome of a single tool
  * call. This class now follows a deferred execution model.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Slf4j

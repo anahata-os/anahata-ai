@@ -19,7 +19,7 @@ import uno.anahata.ai.model.tool.AbstractToolkit;
  * This is a self-contained, executable unit that encapsulates both the
  * definition of the tool and the logic required to invoke it via reflection.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMethodToolCall> {

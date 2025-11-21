@@ -24,7 +24,7 @@ import uno.anahata.ai.model.tool.java.JavaObjectToolkit;
  * configuration, and lookup. It stores toolkits and generates the full
  * list of tools on demand.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 @Getter

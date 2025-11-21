@@ -9,7 +9,7 @@ import uno.anahata.ai.model.tool.ToolPermission;
 /**
  * A serializable POJO that acts as a container for all user-configured tool preferences.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Setter

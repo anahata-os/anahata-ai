@@ -15,7 +15,7 @@ import uno.anahata.ai.model.provider.AbstractModel;
 
 /**
  * A simple, interactive command-line interface for testing the Anahata AI framework.
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class Cli {
 

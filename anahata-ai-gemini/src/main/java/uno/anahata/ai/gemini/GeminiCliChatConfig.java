@@ -8,7 +8,7 @@ import uno.anahata.ai.config.ChatConfig;
  * The core CLI launcher will find this class via reflection to create a runnable
  * CLI for the gemini provider.
  * 
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class GeminiCliChatConfig extends ChatConfig {
     public GeminiCliChatConfig(AiConfig aiConfig) {

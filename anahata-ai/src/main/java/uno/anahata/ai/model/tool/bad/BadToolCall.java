@@ -8,7 +8,7 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
  * Represents a call to a {@link BadTool}, capturing an invalid tool request
  * from the model.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 public class BadToolCall extends AbstractToolCall<BadTool, BadToolResponse> {
 

@@ -11,7 +11,7 @@ import uno.anahata.ai.tool.ToolManager;
  * A focused adapter responsible for converting a Google GenAI FunctionCall into
  * our model-agnostic AbstractToolCall.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FunctionCallAdapter {

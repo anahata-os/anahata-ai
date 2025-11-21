@@ -8,7 +8,7 @@ import lombok.NonNull;
 /**
  * A standardized, model-agnostic response received from an AI model provider.
  * This class is designed to handle multiple candidate responses and associated metadata.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Builder

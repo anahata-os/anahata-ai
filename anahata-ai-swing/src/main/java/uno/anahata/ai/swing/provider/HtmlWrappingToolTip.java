@@ -9,7 +9,7 @@ import uno.anahata.ai.swing.components.WrappingHtmlPane;
  * A custom JToolTip that uses a WrappingHtmlPane configured for HTML.
  * This allows for rich formatting while ensuring the content wraps correctly.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class HtmlWrappingToolTip extends JToolTip {
 

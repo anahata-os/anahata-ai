@@ -18,7 +18,7 @@ import uno.anahata.ai.Chat;
  * The abstract base class for all AI model providers, now with model caching.
  * Its primary responsibilities are to discover available models and manage API keys.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Slf4j

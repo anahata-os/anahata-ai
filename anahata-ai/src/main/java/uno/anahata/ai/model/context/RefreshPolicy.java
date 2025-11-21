@@ -4,7 +4,7 @@ package uno.anahata.ai.model.context;
  * Defines the refresh policy for a {@link StatefulResource} when its content
  * is provided to the model via the Augmented Workspace.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public enum RefreshPolicy {
     /**

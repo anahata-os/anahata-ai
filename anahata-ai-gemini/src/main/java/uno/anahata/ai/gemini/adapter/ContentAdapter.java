@@ -13,7 +13,7 @@ import uno.anahata.ai.tool.ToolManager;
 /**
  * A focused adapter for bidirectional conversion between Anahata's AbstractMessage
  * and Google GenAI's Content object.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ContentAdapter {

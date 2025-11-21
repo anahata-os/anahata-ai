@@ -9,7 +9,7 @@ import lombok.NonNull;
  * A rich, self-documenting representation of a single parameter for a tool method.
  * This replaces the primitive Map-based approach with a robust, object-oriented model.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Builder

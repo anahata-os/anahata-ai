@@ -16,7 +16,7 @@ import uno.anahata.ai.config.Preferences;
  *         application (e.g., "netbeans", "standalone"), managing its unique preferences
  *         and its own application-specific subdirectories.</li>
  * </ul>
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Slf4j

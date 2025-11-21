@@ -9,7 +9,7 @@ import uno.anahata.ai.model.core.AbstractPart;
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
  * to the tool's definition and its corresponding response.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  * @param <T> The specific type of the Tool.
  * @param <R> The specific type of the Response.
  */

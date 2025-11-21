@@ -15,7 +15,7 @@ import uno.anahata.ai.tool.schema.SchemaProvider;
 
 /**
  * The abstract base class for a tool, now generic on its Parameter and Call types.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  * @param <P> The specific subclass of ToolParameter this tool uses.
  * @param <C> The specific subclass of AbstractToolCall this tool creates.
  */

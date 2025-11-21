@@ -9,7 +9,7 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
 /**
  * Represents a message originating from the AI model.
  *
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Setter

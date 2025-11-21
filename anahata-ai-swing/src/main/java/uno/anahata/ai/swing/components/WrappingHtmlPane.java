@@ -14,7 +14,7 @@ import lombok.Getter;
  * width. This is a standard Swing trick to ensure correct layout for long,
  * unbroken strings.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class WrappingHtmlPane extends JPanel {

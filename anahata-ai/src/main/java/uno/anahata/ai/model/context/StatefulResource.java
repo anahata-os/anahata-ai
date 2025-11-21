@@ -5,7 +5,7 @@ package uno.anahata.ai.model.context;
  * trackable state (e.g., a file on disk). This is the lynchpin of the V2
  * context management system.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public interface StatefulResource {
 

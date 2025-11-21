@@ -4,7 +4,7 @@ import lombok.Data;
 
 /**
  * A nested mock object, part of the structure for testing rich schema generation.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Data
 public class MockNestedObject {

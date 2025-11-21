@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
  * Represents a collection of related tools, parsed from a single Java class.
  * This is the core domain model for a "toolkit".
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  * @param <T> The specific type of AbstractTool contained in this toolkit.
  */
 @RequiredArgsConstructor

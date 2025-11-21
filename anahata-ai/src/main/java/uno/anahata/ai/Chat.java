@@ -26,7 +26,7 @@ import uno.anahata.ai.tool.ToolManager;
  * This class manages the conversation history, orchestrates calls to the AI provider,
  * and handles the tool execution lifecycle.
  *
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 @Getter

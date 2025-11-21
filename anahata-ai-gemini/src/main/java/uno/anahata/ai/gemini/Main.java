@@ -4,7 +4,7 @@ package uno.anahata.ai.gemini;
  * A simple main class in the gemini provider module that launches the core,
  * provider-agnostic command-line interface.
  * 
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class Main {
     public static void main(String[] args) {

@@ -8,7 +8,7 @@ import uno.anahata.ai.model.provider.AbstractModel;
 
 /**
  * A standardized, model-agnostic request to be sent to an AI model provider.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @AllArgsConstructor

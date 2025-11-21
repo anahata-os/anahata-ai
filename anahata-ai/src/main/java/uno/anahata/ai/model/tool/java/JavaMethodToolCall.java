@@ -8,7 +8,7 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
 /**
  * A model-agnostic representation of a request to execute a specific Java method tool.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMethodToolResponse> {

@@ -9,7 +9,7 @@ import uno.anahata.ai.model.tool.ToolExecutionStatus;
  * The response for a {@link BadToolCall}. Its status is immediately set to
  * {@link ToolExecutionStatus#NOT_EXECUTED} and its execute method is a no-op.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class BadToolResponse extends AbstractToolResponse<BadToolCall> {

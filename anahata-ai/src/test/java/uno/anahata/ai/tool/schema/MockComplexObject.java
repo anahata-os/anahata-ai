@@ -7,7 +7,7 @@ import lombok.Data;
  * A mock object with a variety of field types, designed to test the richness
  * of the generated JSON schema.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Data
 public class MockComplexObject {

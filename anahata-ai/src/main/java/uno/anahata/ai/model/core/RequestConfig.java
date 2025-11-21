@@ -7,7 +7,7 @@ import uno.anahata.ai.model.tool.AbstractTool;
 
 /**
  * A comprehensive, model-agnostic configuration for a single generateContent request.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Builder

@@ -10,7 +10,7 @@ import javax.swing.Scrollable;
  * particularly for HTML content, by ensuring it tracks the viewport width.
  * This is essential for preventing horizontal overflow of long, unbroken strings.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class WrappingEditorPane extends JEditorPane implements Scrollable {
 

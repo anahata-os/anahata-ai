@@ -3,7 +3,7 @@ package uno.anahata.ai.model.core;
 /**
  * Represents a message originating from the user.
  *
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class UserMessage extends AbstractMessage {
     @Override

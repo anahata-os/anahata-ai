@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
  * It is the central point for the core framework to find and interact with all registered
  * AI provider modules.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 public class AiProviderRegistry {

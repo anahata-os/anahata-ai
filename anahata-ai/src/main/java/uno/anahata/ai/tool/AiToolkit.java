@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * Marks a method as an AI-callable tool and provides essential metadata.
  * This is the cornerstone of the V2 tool framework.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

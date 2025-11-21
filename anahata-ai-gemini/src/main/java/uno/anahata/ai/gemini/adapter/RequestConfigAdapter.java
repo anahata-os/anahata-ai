@@ -15,7 +15,7 @@ import uno.anahata.ai.model.core.RequestConfig;
  * A focused adapter responsible for converting our model-agnostic RequestConfig
  * into a Google GenAI GenerateContentConfig.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestConfigAdapter {

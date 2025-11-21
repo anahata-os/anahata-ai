@@ -10,7 +10,7 @@ import javax.swing.JToolTip;
  * unbroken lines of text (like a raw object's toString() output) are correctly
  * wrapped within a constrained width.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class WrappingToolTip extends JToolTip {
 

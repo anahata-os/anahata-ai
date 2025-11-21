@@ -10,7 +10,7 @@ import javax.swing.Scrollable;
  * content placed inside a JScrollPane wraps horizontally while allowing
  * vertical scrolling.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class ScrollablePanel extends JPanel implements Scrollable {
 

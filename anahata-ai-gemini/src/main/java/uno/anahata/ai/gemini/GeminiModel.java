@@ -24,7 +24,7 @@ import uno.anahata.ai.tool.ToolManager;
  * It wraps the native Google GenAI Model object and implements the abstract
  * methods from the superclass by delegating to the wrapped object.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @RequiredArgsConstructor
 @Slf4j

@@ -4,7 +4,7 @@ import lombok.Data;
 
 /**
  * A placeholder for future web-grounding and retrieval-augmented generation (RAG) capabilities.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Data
 public class GroundingMetadata {

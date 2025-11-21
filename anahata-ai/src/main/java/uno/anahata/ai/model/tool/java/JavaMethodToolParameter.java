@@ -8,7 +8,7 @@ import uno.anahata.ai.model.tool.ToolParameter;
 /**
  * A subclass of ToolParameter that holds Java-specific reflection information,
  * namely the full generic Type of the parameter.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class JavaMethodToolParameter extends ToolParameter {

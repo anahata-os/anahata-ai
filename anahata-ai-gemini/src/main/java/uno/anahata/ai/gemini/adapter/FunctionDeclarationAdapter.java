@@ -18,7 +18,7 @@ import uno.anahata.ai.model.tool.ToolParameter;
  * A focused adapter responsible for converting our model-agnostic AbstractTool
  * into a Google GenAI FunctionDeclaration.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

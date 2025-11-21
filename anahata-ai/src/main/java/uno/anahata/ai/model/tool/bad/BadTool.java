@@ -11,7 +11,7 @@ import uno.anahata.ai.model.tool.ToolPermission;
  * A special tool implementation representing a tool that was requested by the
  * model but was not found in the registered toolkits.
  *
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  */
 public class BadTool extends AbstractTool<ToolParameter, BadToolCall> {
 

@@ -14,7 +14,7 @@ import java.util.Optional;
  * boolean to indicate if a value is present, followed by the value itself if it
  * exists.
  *
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class OptionalSerializer extends Serializer<Optional<?>> {
 

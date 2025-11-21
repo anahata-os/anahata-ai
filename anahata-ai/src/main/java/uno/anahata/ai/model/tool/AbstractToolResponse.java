@@ -9,7 +9,7 @@ import uno.anahata.ai.model.core.AbstractPart;
 /**
  * Represents the response of a tool call, designed for deferred execution.
  * The fields are populated by the {@link #execute()} method.
- * @author pablo
+ * @author anahata-gemini-pro-2.5
  * @param <C> The specific type of the Call this response is for.
  */
 @Getter

@@ -4,7 +4,7 @@ package uno.anahata.ai.model.tool;
  * Represents the lifecycle status of a single tool's execution.
  * This provides a more granular view than a simple success/failure flag.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 public enum ToolExecutionStatus {
     /** The tool call has been created but not yet processed or executed. */

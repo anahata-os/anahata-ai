@@ -11,7 +11,7 @@ import lombok.NonNull;
  * A container for the results of all tool invocations processed in a single turn.
  * This replaces {@code uno.anahata.ai.tools.FunctionProcessingResult}.
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 @AllArgsConstructor

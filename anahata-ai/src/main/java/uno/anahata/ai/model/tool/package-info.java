@@ -17,6 +17,6 @@
  *       tool lifecycle, eliminating the ambiguity of the previous implementation.</li>
  * </ul>
  *
- * @author anahata
+ * @author anahata-gemini-pro-2.5
  */
 package uno.anahata.ai.model.tool;

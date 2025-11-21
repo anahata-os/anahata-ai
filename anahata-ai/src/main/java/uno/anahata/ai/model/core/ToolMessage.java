@@ -8,7 +8,7 @@ import uno.anahata.ai.model.tool.AbstractToolResponse;
  * Represents a message containing the results of tool executions.
  * This message is sent from the client back to the model.
  *
- * @author Anahata
+ * @author anahata-gemini-pro-2.5
  */
 public class ToolMessage extends AbstractMessage {
     @Override
