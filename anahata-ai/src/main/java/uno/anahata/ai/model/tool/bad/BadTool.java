@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.tool.bad;
 
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
 import uno.anahata.ai.model.tool.AbstractTool;
@@ -28,5 +29,10 @@ public class BadTool extends AbstractTool<ToolParameter, BadToolCall> {
     @Override
     public BadToolCall createCall(String id, Map<String, Object> args) {
         return new BadToolCall(id, this, args);
+    }
+
+    @Override
+    public Type getResponseType() {
+        return BadToolResponse.class;
     }
 }

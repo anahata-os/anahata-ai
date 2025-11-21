@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.tool;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
@@ -36,8 +37,10 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
     
     /**
      * The single, final response object associated with this call.
+     * This is ignored during schema generation to prevent a circular reference.
      */
     @NonNull
+    @JsonIgnore
     private final R response;
 
     public AbstractToolCall(@NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {

@@ -3,6 +3,7 @@ package uno.anahata.ai.model.tool.java;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,5 +93,10 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
 
         // 3. Create the final call object
         return new JavaMethodToolCall(id, this, convertedArgs);
+    }
+
+    @Override
+    public Type getResponseType() {
+        return JavaMethodToolResponse.class;
     }
 }

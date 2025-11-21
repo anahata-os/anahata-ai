@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  * @author anahata
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target(ElementType.TYPE)
 public @interface AiToolkit {
 
     /**

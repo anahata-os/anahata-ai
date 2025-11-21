@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,9 +16,10 @@ import lombok.Setter;
 public abstract class AbstractPart {
     /**
      * A backward reference to the Message that contains this part.
-     * This is for runtime convenience and is serialized along with the message
-     * to maintain the integrity of the object graph.
+     * This is for runtime convenience and is ignored during schema generation
+     * to keep the public contract clean.
      */
+    @JsonIgnore
     private AbstractMessage message;
 
     /**

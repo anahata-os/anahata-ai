@@ -1,5 +1,8 @@
 package uno.anahata.ai.model.tool.java;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.Map;
@@ -20,12 +23,18 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
 
     /**
      * The original invocation request that this result corresponds to.
+     * Ignored during schema generation to prevent circular references.
      */
     @NonNull
+    @JsonIgnore
     private final JavaMethodToolCall call;
 
-    /** The raw exception thrown during execution, for debugging purposes. */
-    private transient Throwable exception;
+    /** 
+     * The raw exception thrown during execution, for debugging and session serialization.
+     * Ignored during schema generation as it's an internal detail.
+     */
+    @JsonIgnore
+    private Throwable exception;
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
         this.call = call;
@@ -41,7 +50,6 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     public void execute() {
         long startTime = System.currentTimeMillis();
         try {
-            // Correctly get the tool from the call object
             JavaMethodTool tool = getCall().getTool();
             var method = tool.getMethod();
             var toolInstance = tool.getToolInstance();
@@ -65,14 +73,17 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
             
-            if (cause instanceof AiToolException) {
-                setError(cause.getMessage());
-            } else {
-                setError(cause.toString());
-            }
+            setError(getStackTraceAsString(cause));
             setStatus(ToolExecutionStatus.FAILED);
         } finally {
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);
         }
+    }
+    
+    private String getStackTraceAsString(Throwable throwable) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        throwable.printStackTrace(pw);
+        return sw.toString();
     }
 }

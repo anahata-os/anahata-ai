@@ -1,11 +1,17 @@
 package uno.anahata.ai.model.tool;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.tool.schema.SchemaProvider;
 
 /**
  * The abstract base class for a tool, now generic on its Parameter and Call types.
@@ -15,7 +21,10 @@ import lombok.Setter;
  */
 @RequiredArgsConstructor
 @Getter
+@Slf4j
 public abstract class AbstractTool<P extends ToolParameter, C extends AbstractToolCall> {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    
     /** The fully qualified name of the tool, e.g., "LocalFiles.readFile". */
     @NonNull
     private final String name;
@@ -42,7 +51,7 @@ public abstract class AbstractTool<P extends ToolParameter, C extends AbstractTo
     private final List<P> parameters;
     
     /** A pre-generated, language-agnostic JSON schema for the tool's return type. Can be null for void methods. */
-    private final String returnTypeSchema;
+    private final String returnTypeJsonSchema;
 
     /**
      * Factory method to create a tool-specific call object from raw model data.
@@ -51,5 +60,58 @@ public abstract class AbstractTool<P extends ToolParameter, C extends AbstractTo
      * @return A new tool call instance.
      */
     public abstract C createCall(String id, Map<String, Object> args);
+    
+    /**
+     * Template method hook for subclasses to provide their specific Response type.
+     * @return The reflection Type of the corresponding AbstractToolResponse subclass.
+     */
+    public abstract Type getResponseType();
 
+    /**
+     * Dynamically generates a rich JSON schema for the tool's *entire response*,
+     * including status, errors, and the specific schema of the 'result' field.
+     * @return A JSON schema string, or null on failure.
+     */
+    public String getResponseJsonSchema() {
+        try {
+            Type responseType = getResponseType();
+            if (responseType == null || responseType.equals(void.class)) {
+                return null;
+            }
+
+            // 1. Get base schema for the responseType (e.g., JavaMethodToolResponse)
+            String baseSchemaJson = SchemaProvider.generateInlinedSchemaString(responseType);
+            if (baseSchemaJson == null) {
+                log.warn("Could not generate base schema for response type: {}", responseType.getTypeName());
+                return null;
+            }
+
+            // 2. Get the schema for the actual result (e.g., String, FileInfo)
+            String resultSchemaJson = getReturnTypeJsonSchema();
+            if (resultSchemaJson == null) {
+                return baseSchemaJson; // No result schema to inject, return the base schema as-is.
+            }
+
+            // 3. Parse both schemas
+            Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
+            Map<String, Object> baseSchemaMap = GSON.fromJson(baseSchemaJson, mapType);
+            Map<String, Object> resultSchemaMap = GSON.fromJson(resultSchemaJson, mapType);
+
+            // 4. Surgically inject the result schema into the 'result' property
+            Object propertiesObj = baseSchemaMap.get("properties");
+            if (propertiesObj instanceof Map) {
+                Map<String, Object> propertiesMap = (Map<String, Object>) propertiesObj;
+                if (propertiesMap.containsKey("result")) {
+                    propertiesMap.put("result", resultSchemaMap);
+                }
+            }
+
+            // 5. Return the final, combined schema string
+            return GSON.toJson(baseSchemaMap);
+
+        } catch (Exception e) {
+            log.error("Error generating response schema for tool {}", getName(), e);
+            return null;
+        }
+    }
 }
