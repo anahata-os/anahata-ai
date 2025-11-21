@@ -26,4 +26,11 @@ public abstract class AbstractPart {
      * A flag indicating whether this part has been pruned from the context.
      */
     private boolean pruned = false;
+    
+    /**
+     * Returns the content of the part as a simple string.
+     * This is implemented by subclasses.
+     * @return The text representation of the part.
+     */
+    public abstract String asText();
 }

@@ -1,7 +1,9 @@
 package uno.anahata.ai.model.core;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,7 +43,7 @@ public abstract class AbstractMessage {
     /**
      * The list of parts that make up the message content.
      */
-    private List<AbstractPart> parts;
+    private List<AbstractPart> parts = new ArrayList<>();
 
     /**
      * A flag indicating whether this message has been pruned from the context.
@@ -55,4 +57,16 @@ public abstract class AbstractMessage {
      * @return The role of the message creator.
      */
     public abstract Role getRole();
+    
+    /**
+     * Convenience method to get the message content as a single string,
+     * concatenating the text representation of all its parts.
+     *
+     * @return The concatenated text content.
+     */
+    public String asText() {
+        return getParts().stream()
+            .map(AbstractPart::asText)
+            .collect(Collectors.joining());
+    }
 }

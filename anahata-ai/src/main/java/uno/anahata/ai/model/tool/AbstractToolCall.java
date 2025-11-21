@@ -64,4 +64,9 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
      * @return A new, un-executed tool response.
      */
     protected abstract R createResponse();
+    
+    @Override
+    public String asText() {
+        return "[Tool Call: " + getName() + " with args: " + getArgs().toString() + "]";
+    }
 }

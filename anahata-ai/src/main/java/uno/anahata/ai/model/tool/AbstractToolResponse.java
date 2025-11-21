@@ -64,4 +64,9 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
     public void clearLogs() {
         this.logs.clear();
     }
+    
+    @Override
+    public String asText() {
+        return "[Tool Response: " + getStatus() + ", Result: " + getResult() + "]";
+    }
 }

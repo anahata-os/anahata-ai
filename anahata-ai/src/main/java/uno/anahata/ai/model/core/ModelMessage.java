@@ -15,12 +15,14 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
 @Setter
 public class ModelMessage extends AbstractMessage {
     
+    /** The ID of the model that generated this message. */
+    private String modelId;
+    
     /** The number of tokens used by this message. */
     private int tokenCount;
     
-    public ModelMessage(List<AbstractPart> parts, int tokenCount) {
-        setParts(parts);
-        this.tokenCount = tokenCount;
+    public ModelMessage() {
+        //no arg constructor
     }
     
     @Override

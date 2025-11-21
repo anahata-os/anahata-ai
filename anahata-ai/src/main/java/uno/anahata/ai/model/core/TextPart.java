@@ -14,4 +14,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TextPart extends AbstractPart {
     private String text;
+
+    @Override
+    public String asText() {
+        return text;
+    }
 }
