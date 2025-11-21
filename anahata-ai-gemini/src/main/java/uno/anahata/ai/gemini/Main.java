@@ -1,11 +1,10 @@
 package uno.anahata.ai.gemini;
 
-import uno.anahata.ai.gemini.model.provider.GeminiAiProvider;
 import java.util.Set;
-import uno.anahata.ai.model.config.AiConfig;
+import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AiProviderRegistry;
-import uno.anahata.ai.model.provider.model.AbstractAiModel;
+import uno.anahata.ai.model.provider.AbstractModel;
 
 /**
  * A simple test harness to demonstrate the programmatic provider registry.
@@ -20,7 +19,7 @@ public class Main {
         System.out.println("Starting Anahata AI Provider Test...");
 
         // 1. Create the core configuration and registry
-        AiConfig config = new AiConfig();
+        AiConfig config = new AiConfig("Main");
         AiProviderRegistry registry = new AiProviderRegistry();
 
         // 2. Programmatically create and register our Gemini provider
@@ -36,7 +35,7 @@ public class Main {
             System.out.println("----------------------------------------");
             
             // List all models
-            for (AbstractAiModel model : provider.listModels()) {
+            for (AbstractModel model : provider.listModels()) {
                 System.out.printf("  - Model: %s (%s)\n", model.getDisplayName(), model.getModelId());
                 System.out.printf("    Supported Actions: %s\n", model.getSupportedActions());
             }

@@ -9,11 +9,11 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
-import uno.anahata.ai.gemini.model.provider.GeminiAiProvider;
-import uno.anahata.ai.model.config.AiConfig;
+import uno.anahata.ai.AiConfig;
+
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AiProviderRegistry;
-import uno.anahata.ai.model.provider.model.AbstractAiModel;
+import uno.anahata.ai.model.provider.AbstractModel;
 
 public class ProviderRegistryViewer extends JPanel {
 
@@ -22,7 +22,7 @@ public class ProviderRegistryViewer extends JPanel {
     private final JTextField filterField;
     private final TableRowSorter<ModelTableModel> sorter;
 
-    public ProviderRegistryViewer(List<AbstractAiModel> models) {
+    public ProviderRegistryViewer(List<AbstractModel> models) {
         super(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -38,14 +38,22 @@ public class ProviderRegistryViewer extends JPanel {
         sorter = new TableRowSorter<>(tableModel);
         
         table = new JTable(tableModel) {
+            
+            @Override
+            public JToolTip createToolTip() {
+                // Use the HTML-based custom tooltip
+                return new HtmlWrappingToolTip();
+            }
+            
             @Override
             public String getToolTipText(MouseEvent e) {
                 Point p = e.getPoint();
                 int viewRow = rowAtPoint(p);
                 if (viewRow >= 0) {
                     int modelRow = convertRowIndexToModel(viewRow);
-                    AbstractAiModel model = tableModel.getModelAt(modelRow);
+                    AbstractModel model = tableModel.getModelAt(modelRow);
                     if (model != null) {
+                        // Return the HTML version for the JTextPane in the custom tooltip
                         return model.getRawDescription();
                     }
                 }
@@ -88,13 +96,13 @@ public class ProviderRegistryViewer extends JPanel {
             "Display Name", "Model ID", "Generate", "Functions", "Embed", "Batch Embed", "Cache",
             "Input Tokens", "Output Tokens"
         };
-        private final List<AbstractAiModel> models;
+        private final List<AbstractModel> models;
 
-        public ModelTableModel(List<AbstractAiModel> models) {
+        public ModelTableModel(List<AbstractModel> models) {
             this.models = models;
         }
         
-        public AbstractAiModel getModelAt(int rowIndex) {
+        public AbstractModel getModelAt(int rowIndex) {
             if (rowIndex >= 0 && rowIndex < models.size()) {
                 return models.get(rowIndex);
             }
@@ -110,7 +118,7 @@ public class ProviderRegistryViewer extends JPanel {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            AbstractAiModel model = models.get(rowIndex);
+            AbstractModel model = models.get(rowIndex);
             switch (columnIndex) {
                 case 0: return model.getDisplayName();
                 case 1: return model.getModelId();
@@ -131,8 +139,9 @@ public class ProviderRegistryViewer extends JPanel {
         // Configure SLF4J Simple Logger to show DEBUG messages
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
         
-        AiConfig config = new AiConfig();
+        AiConfig config = new AiConfig("test");
         AiProviderRegistry registry = new AiProviderRegistry();
+        /*
         AbstractAiProvider geminiProvider = new GeminiAiProvider(config);
         registry.registerProvider(geminiProvider);
 
@@ -149,5 +158,6 @@ public class ProviderRegistryViewer extends JPanel {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
+*/
     }
 }

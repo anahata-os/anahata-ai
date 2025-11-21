@@ -1,0 +1,24 @@
+package uno.anahata.ai.model.tool;
+
+import java.util.HashMap;
+import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
+import uno.anahata.ai.model.tool.ToolPermission;
+
+/**
+ * A serializable POJO that acts as a container for all user-configured tool preferences.
+ *
+ * @author anahata
+ */
+@Getter
+@Setter
+public class ToolPreferences {
+
+    /**
+     * A map where the key is the tool name (e.g., "LocalFiles.readFile") and the value
+     * is the user's stored preference for that tool.
+     */
+    private Map<String, ToolPermission> toolPermissions = new HashMap<>();
+
+}

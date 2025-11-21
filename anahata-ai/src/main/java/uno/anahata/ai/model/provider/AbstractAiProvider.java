@@ -10,8 +10,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.model.config.AiConfig;
-import uno.anahata.ai.model.provider.model.AbstractAiModel;
+import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.model.core.Request;
+import uno.anahata.ai.model.core.Response;
 
 /**
  * The abstract base class for all AI model providers, now with model caching.
@@ -21,26 +22,41 @@ import uno.anahata.ai.model.provider.model.AbstractAiModel;
 @Getter
 @Slf4j
 public abstract class AbstractAiProvider {
-
+    /** The application-wide configuration, available to all provider subclasses. */
     protected final AiConfig config;
+    
     private final String providerId;
     private int round = 0;
     
     // Transient cache for the models
-    private transient List<? extends AbstractAiModel> models;
+    private transient List<? extends AbstractModel> models;
 
-    public AbstractAiProvider(String providerId, AiConfig config) {
-        this.providerId = providerId;
+    /**
+     * Constructs a new provider instance.
+     * @param config The application-wide configuration.
+     * @param providerId The unique ID for this provider (e.g., "gemini").
+     */
+    public AbstractAiProvider(AiConfig config, String providerId) {
         this.config = config;
+        this.providerId = providerId;
     }
+    
+    /**
+     * Generates content based on a model-agnostic request.
+     * This is the core method that provider implementations must override.
+     *
+     * @param request The standardized model request.
+     * @return The standardized model response.
+     */
+    public abstract Response generateContent(Request request);
 
     /**
      * Fetches the list of all models available from the provider's API.
      * This method is intended to be called by the caching mechanism.
      *
-     * @return A list of provider-specific {@link AbstractAiModel} objects.
+     * @return A list of provider-specific {@link AbstractModel} objects.
      */
-    public abstract List<? extends AbstractAiModel> listModels();
+    public abstract List<? extends AbstractModel> listModels();
 
     /**
      * Gets the list of models, using a lazy-loaded cache.
@@ -49,7 +65,7 @@ public abstract class AbstractAiProvider {
      *
      * @return The cached list of models.
      */
-    public synchronized List<? extends AbstractAiModel> getModels() {
+    public synchronized List<? extends AbstractModel> getModels() {
         if (this.models == null) {
             log.info("Model cache is empty for provider '{}'. Loading from API...", getProviderId());
             try {
@@ -67,7 +83,7 @@ public abstract class AbstractAiProvider {
      *
      * @return The newly fetched list of models.
      */
-    public synchronized List<? extends AbstractAiModel> refreshModels() {
+    public synchronized List<? extends AbstractModel> refreshModels() {
         log.info("Refreshing model cache for provider '{}'...", getProviderId());
         this.models = null; // Clear the cache
         return getModels();
@@ -101,11 +117,12 @@ public abstract class AbstractAiProvider {
     }
 
     /**
-     * Gets the provider-specific storage directory within the main AI work directory.
+     * Gets the provider-specific global storage directory within the main AI work directory.
+     * 
      * @return The path to the provider's directory.
      */
     public Path getProviderDirectory() {
-        return config.getWorkDirectory().resolve(getProviderId());
+        return AiConfig.getWorkDirSubDir(providerId);
     }
 
     private List<String> loadKeyPool() {

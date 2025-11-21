@@ -1,0 +1,30 @@
+package uno.anahata.ai.model.core;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import uno.anahata.ai.model.tool.AbstractToolResponse;
+
+/**
+ * Represents a message containing the results of tool executions.
+ * This message is sent from the client back to the model.
+ *
+ * @author Anahata
+ */
+public class ToolMessage extends Message {
+    @Override
+    public Role getRole() {
+        return Role.TOOL;
+    }
+
+    /**
+     * Filters and returns only the tool response parts from this message.
+     * @return A list of {@link AbstractToolResponse} parts, or an empty list if none exist.
+     */
+    @SuppressWarnings("unchecked")
+    public List<AbstractToolResponse> getToolResponses() {
+        return getParts().stream()
+                .filter(AbstractToolResponse.class::isInstance)
+                .map(p -> (AbstractToolResponse) p)
+                .collect(Collectors.toList());
+    }
+}

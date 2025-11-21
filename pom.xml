@@ -23,9 +23,9 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <!-- Dependency Versions -->
-        <lombok.version>1.18.38</lombok.version>
-        <slf4j.version>2.0.13</slf4j.version>
-        <swagger.version>2.2.22</swagger.version>
+        <lombok.version>1.18.42</lombok.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <swagger.version>2.2.40</swagger.version>
         <junit.version>5.10.3</junit.version>
 
         <!-- Plugin Versions -->
@@ -85,6 +85,13 @@
                         <compilerArgs>
                             <arg>-parameters</arg>
                         </compilerArgs>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <!-- Surefire Plugin for running tests -->

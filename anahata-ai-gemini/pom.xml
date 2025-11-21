@@ -11,7 +11,7 @@
     <artifactId>anahata-ai-gemini</artifactId>
     <packaging>jar</packaging>
     
-    <name>Anahata AI Gemini Implementation</name>
+    <name>Anahata AI Gemini Provider</name>
     <description>The Gemini-specific implementation of the Anahata AI core APIs.</description>
     
     <dependencies>
