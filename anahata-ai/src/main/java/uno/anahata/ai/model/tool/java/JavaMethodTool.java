@@ -3,7 +3,6 @@ package uno.anahata.ai.model.tool.java;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,9 +10,8 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.model.tool.AbstractTool;
-import uno.anahata.ai.model.tool.ToolParameter;
 import uno.anahata.ai.model.tool.ToolPermission;
-import uno.anahata.ai.model.tool.Toolkit;
+import uno.anahata.ai.model.tool.AbstractToolkit;
 
 /**
  * A model-agnostic, stateful representation of a single Java method tool.
@@ -23,7 +21,7 @@ import uno.anahata.ai.model.tool.Toolkit;
  * @author anahata
  */
 @Getter
-public class JavaMethodTool extends AbstractTool<JavaMethodToolCall, JavaMethodToolResponse> {
+public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMethodToolCall> {
     private static final Gson GSON = new Gson();
 
     /** The full Java method signature. */
@@ -41,14 +39,15 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolCall, JavaMethodT
             @NonNull String name,
             @NonNull String description,
             @NonNull ToolPermission permission,
-            @NonNull List<ToolParameter> parameters,
+            @NonNull List<JavaMethodToolParameter> parameters,
             @NonNull String javaMethodSignature,
             @NonNull Method method,
             int retentionTurns,
             Object toolInstance, // Can be null for static methods
-            Toolkit toolkit
+            AbstractToolkit toolkit,
+            String returnTypeSchema
     ) {
-        super(name, description, toolkit, permission, parameters);
+        super(name, description, toolkit, permission, parameters, returnTypeSchema);
         setRetentionTurns(retentionTurns);
         this.javaMethodSignature = javaMethodSignature;
         this.method = method;
@@ -59,7 +58,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolCall, JavaMethodT
     public JavaMethodToolCall createCall(String id, Map<String, Object> jsonArgs) {
         // 1. Pre-flight validation for required parameters
         List<String> missingParams = new ArrayList<>();
-        for (ToolParameter param : getParameters()) {
+        for (JavaMethodToolParameter param : getParameters()) { // No cast needed!
             if (param.isRequired() && !jsonArgs.containsKey(param.getName())) {
                 missingParams.add(param.getName());
             }
@@ -71,15 +70,16 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolCall, JavaMethodT
             return call;
         }
 
-        // 2. Convert arguments from JSON types to Java types
+        // 2. Convert arguments from JSON types to Java types using our rich parameter models
         Map<String, Object> convertedArgs = new HashMap<>();
         try {
-            for (Parameter p : getMethod().getParameters()) {
-                String paramName = p.getName();
+            for (JavaMethodToolParameter javaParam : getParameters()) { // No cast needed!
+                String paramName = javaParam.getName();
                 Object rawValue = jsonArgs.get(paramName);
                 if (rawValue != null) {
                     String jsonValue = GSON.toJson(rawValue);
-                    Object convertedValue = GSON.fromJson(jsonValue, p.getParameterizedType());
+                    // Use the stored generic Type for accurate deserialization
+                    Object convertedValue = GSON.fromJson(jsonValue, javaParam.getJavaType());
                     convertedArgs.put(paramName, convertedValue);
                 }
             }

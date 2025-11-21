@@ -15,7 +15,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public abstract class Message {
+public abstract class AbstractMessage {
     /**
      * A unique, immutable identifier for this message.
      */
@@ -41,7 +41,7 @@ public abstract class Message {
     /**
      * The list of parts that make up the message content.
      */
-    private List<Part> parts;
+    private List<AbstractPart> parts;
 
     /**
      * A flag indicating whether this message has been pruned from the context.

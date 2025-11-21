@@ -16,48 +16,39 @@ import uno.anahata.ai.tool.AiToolException;
  * @author anahata
  */
 @Getter
-public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolCall, JavaMethodTool> {
+public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolCall> {
 
     /**
      * The original invocation request that this result corresponds to.
      */
     @NonNull
-    private final JavaMethodToolCall invocation;
+    private final JavaMethodToolCall call;
 
     /** The raw exception thrown during execution, for debugging purposes. */
     private transient Throwable exception;
 
-    public JavaMethodToolResponse(@NonNull JavaMethodToolCall invocation) {
-        this.invocation = invocation;
+    public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
+        this.call = call;
         setStatus(ToolExecutionStatus.PENDING);
     }
-    
-    /**
-     * Sets the initial state of the response if it was pre-rejected by the ToolManager.
-     * @param reason The reason for the rejection.
-     */
-    public void setInitialRejectionReason(String reason) {
-        if (getStatus() == ToolExecutionStatus.PENDING) {
-            setStatus(ToolExecutionStatus.NOT_EXECUTED);
-            setError(reason);
-        }
+
+    @Override
+    public JavaMethodToolCall getCall() {
+        return call;
     }
 
     @Override
-    public JavaMethodToolCall getInvocation() {
-        return invocation;
-    }
-
-    @Override
-    public void execute(JavaMethodTool tool) {
+    public void execute() {
         long startTime = System.currentTimeMillis();
         try {
+            // Correctly get the tool from the call object
+            JavaMethodTool tool = getCall().getTool();
             var method = tool.getMethod();
             var toolInstance = tool.getToolInstance();
 
             Parameter[] methodParameters = method.getParameters();
             Object[] argsToInvoke = new Object[methodParameters.length];
-            Map<String, Object> argsFromModel = getInvocation().getArgs();
+            Map<String, Object> argsFromModel = getCall().getArgs();
 
             for (int i = 0; i < methodParameters.length; i++) {
                 Parameter p = methodParameters[i];

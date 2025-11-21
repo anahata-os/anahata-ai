@@ -1,7 +1,8 @@
-package uno.anahata.ai.model.tool;
+package uno.anahata.ai.model.tool.bad;
 
 import java.util.Map;
 import lombok.NonNull;
+import uno.anahata.ai.model.tool.AbstractToolCall;
 
 /**
  * Represents a call to a {@link BadTool}, capturing an invalid tool request

@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.tool;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -12,6 +13,7 @@ import lombok.NonNull;
  */
 @Getter
 @Builder
+@AllArgsConstructor
 public class ToolParameter {
     /** The name of the parameter. */
     @NonNull
@@ -21,9 +23,9 @@ public class ToolParameter {
     @NonNull
     private final String description;
 
-    /** The Java type of the parameter. */
+    /** A pre-generated, language-agnostic JSON schema for this parameter. */
     @NonNull
-    private final Class<?> type;
+    private final String jsonSchema;
 
     /** Whether this parameter is required for the tool call. */
     private final boolean required;

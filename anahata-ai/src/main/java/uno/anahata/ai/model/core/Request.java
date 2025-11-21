@@ -19,7 +19,7 @@ public class Request {
     
     /** The complete conversation history to be sent to the model. */
     @NonNull
-    private final List<Message> history;
+    private final List<AbstractMessage> history;
 
     /** The configuration for this specific request. */
     private final RequestConfig config;

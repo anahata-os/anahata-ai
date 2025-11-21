@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 @Getter
-public abstract class Toolkit<T extends AbstractTool> {
+public abstract class AbstractToolkit<T extends AbstractTool> {
     public final String name;
     public final String description;
     public boolean enabled = true;

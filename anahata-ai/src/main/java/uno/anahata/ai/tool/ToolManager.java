@@ -13,9 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
-import uno.anahata.ai.model.tool.BadTool;
+import uno.anahata.ai.model.tool.bad.BadTool;
 import uno.anahata.ai.model.tool.ToolPermission;
-import uno.anahata.ai.model.tool.Toolkit;
+import uno.anahata.ai.model.tool.AbstractToolkit;
 import uno.anahata.ai.model.tool.java.JavaObjectToolkit;
 
 /**
@@ -31,7 +31,7 @@ public class ToolManager {
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
     private final AiConfig config;
-    private final Map<String, Toolkit<?>> toolkits = new HashMap<>();
+    private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
 
     public ToolManager(@NonNull AiConfig config) {
         this.config = config;
@@ -49,8 +49,8 @@ public class ToolManager {
         for (Class<?> clazz : classes) {
             try {
                 JavaObjectToolkit toolkit = new JavaObjectToolkit(clazz);
-                toolkits.put(toolkit.getName(), toolkit);
-                log.info("Registered toolkit: {}", toolkit.getName());
+                toolkits.put(toolkit.name, toolkit);
+                log.info("Registered toolkit: {}", toolkit.name);
             } catch (Exception e) {
                 log.error("Failed to register toolkit for class: {}", clazz.getName(), e);
             }
@@ -83,9 +83,9 @@ public class ToolManager {
         AbstractToolCall call = tool.createCall(callId, jsonArgs);
 
         // Post-creation checks
-        Toolkit toolkit = tool.getToolkit();
+        AbstractToolkit toolkit = tool.getToolkit();
         if (toolkit != null && !toolkit.isEnabled()) {
-            String reason = "Tool call rejected: The toolkit '" + toolkit.getName() + "' is disabled.";
+            String reason = "Tool call rejected: The toolkit '" + toolkit.name + "' is disabled.";
             log.warn(reason);
             call.getResponse().reject(reason);
         }
@@ -105,13 +105,13 @@ public class ToolManager {
             .findFirst();
     }
 
-    public List<Toolkit<?>> getEnabledToolkits() {
+    public List<AbstractToolkit<?>> getEnabledToolkits() {
         return toolkits.values().stream()
-            .filter(Toolkit::isEnabled)
+            .filter(AbstractToolkit::isEnabled)
             .collect(Collectors.toList());
     }
 
-    public List<Toolkit<?>> getDisabledToolkits() {
+    public List<AbstractToolkit<?>> getDisabledToolkits() {
         return toolkits.values().stream()
             .filter(tk -> !tk.isEnabled())
             .collect(Collectors.toList());
@@ -124,7 +124,7 @@ public class ToolManager {
      */
     public List<? extends AbstractTool> getAllTools() {
         return toolkits.values().stream()
-            .map(Toolkit::getAllTools)
+            .map(AbstractToolkit::getAllTools)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }
@@ -136,7 +136,7 @@ public class ToolManager {
      */
     public List<? extends AbstractTool> getEnabledTools() {
         return getEnabledToolkits().stream()
-            .map(Toolkit::getAllowedTools)
+            .map(AbstractToolkit::getAllowedTools)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }

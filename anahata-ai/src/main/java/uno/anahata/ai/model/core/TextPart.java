@@ -6,12 +6,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * A concrete Part implementation for simple text content.
+ * A concrete AbstractPart implementation for simple text content.
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TextPart extends Part {
+public class TextPart extends AbstractPart {
     private String text;
 }

@@ -5,7 +5,7 @@ package uno.anahata.ai.model.core;
  *
  * @author Anahata
  */
-public class UserMessage extends Message {
+public class UserMessage extends AbstractMessage {
     @Override
     public Role getRole() {
         return Role.USER;

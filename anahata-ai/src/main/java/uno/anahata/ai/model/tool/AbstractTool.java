@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
- */
 package uno.anahata.ai.model.tool;
 
 import java.util.List;
@@ -12,12 +8,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
- *
+ * The abstract base class for a tool, now generic on its Parameter and Call types.
  * @author pablo
+ * @param <P> The specific subclass of ToolParameter this tool uses.
+ * @param <C> The specific subclass of AbstractToolCall this tool creates.
  */
 @RequiredArgsConstructor
 @Getter
-public abstract class AbstractTool<T extends AbstractToolCall, U extends AbstractToolResponse> {
+public abstract class AbstractTool<P extends ToolParameter, C extends AbstractToolCall> {
     /** The fully qualified name of the tool, e.g., "LocalFiles.readFile". */
     @NonNull
     private final String name;
@@ -27,7 +25,7 @@ public abstract class AbstractTool<T extends AbstractToolCall, U extends Abstrac
     private final String description;
 
     /** A reference to the parent toolkit that owns this tool. Can be null for standalone tools. */
-    private final Toolkit toolkit;
+    private final AbstractToolkit toolkit;
 
     /** The user's configured preference for this tool, determining its execution behavior. */
     @Setter
@@ -41,7 +39,10 @@ public abstract class AbstractTool<T extends AbstractToolCall, U extends Abstrac
 
     /** A rich, ordered list of the tool's parameters. */
     @NonNull
-    private final List<ToolParameter> parameters;
+    private final List<P> parameters;
+    
+    /** A pre-generated, language-agnostic JSON schema for the tool's return type. Can be null for void methods. */
+    private final String returnTypeSchema;
 
     /**
      * Factory method to create a tool-specific call object from raw model data.
@@ -49,6 +50,6 @@ public abstract class AbstractTool<T extends AbstractToolCall, U extends Abstrac
      * @param args The raw arguments from the model.
      * @return A new tool call instance.
      */
-    public abstract T createCall(String id, Map<String, Object> args);
+    public abstract C createCall(String id, Map<String, Object> args);
 
 }

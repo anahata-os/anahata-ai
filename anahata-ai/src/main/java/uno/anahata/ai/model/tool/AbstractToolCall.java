@@ -3,15 +3,17 @@ package uno.anahata.ai.model.tool;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
-import uno.anahata.ai.model.core.Part;
+import uno.anahata.ai.model.core.AbstractPart;
 
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
  * to the tool's definition and its corresponding response.
  * @author pablo
+ * @param <T> The specific type of the Tool.
+ * @param <R> The specific type of the Response.
  */
 @Getter
-public abstract class AbstractToolCall<T extends AbstractTool, U extends AbstractToolResponse> extends Part {
+public abstract class AbstractToolCall<T extends AbstractTool, R extends AbstractToolResponse> extends AbstractPart {
 
     /**
      * A unique, immutable identifier for this specific invocation request.
@@ -36,7 +38,7 @@ public abstract class AbstractToolCall<T extends AbstractTool, U extends Abstrac
      * The single, final response object associated with this call.
      */
     @NonNull
-    private final U response;
+    private final R response;
 
     public AbstractToolCall(@NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {
         this.id = id;
@@ -58,5 +60,5 @@ public abstract class AbstractToolCall<T extends AbstractTool, U extends Abstrac
      * This acts as a factory method and is called once by the constructor.
      * @return A new, un-executed tool response.
      */
-    protected abstract U createResponse();
+    protected abstract R createResponse();
 }

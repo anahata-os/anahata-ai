@@ -1,7 +1,10 @@
-package uno.anahata.ai.model.tool;
+package uno.anahata.ai.model.tool.bad;
 
 import java.util.Collections;
 import java.util.Map;
+import uno.anahata.ai.model.tool.AbstractTool;
+import uno.anahata.ai.model.tool.ToolParameter;
+import uno.anahata.ai.model.tool.ToolPermission;
 
 /**
  * A special tool implementation representing a tool that was requested by the
@@ -9,7 +12,7 @@ import java.util.Map;
  *
  * @author pablo
  */
-public class BadTool extends AbstractTool<BadToolCall, BadToolResponse> {
+public class BadTool extends AbstractTool<ToolParameter, BadToolCall> {
 
     public BadTool(String name) {
         super(
@@ -17,7 +20,8 @@ public class BadTool extends AbstractTool<BadToolCall, BadToolResponse> {
             "Tool not found: " + name,
             null, // No parent toolkit
             ToolPermission.DENY_NEVER,
-            Collections.emptyList()
+            Collections.emptyList(),
+            null // No return type schema for a bad tool
         );
     }
 

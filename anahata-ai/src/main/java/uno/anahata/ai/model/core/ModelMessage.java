@@ -9,7 +9,7 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
  *
  * @author Anahata
  */
-public class ModelMessage extends Message {
+public class ModelMessage extends AbstractMessage {
     @Override
     public Role getRole() {
         return Role.MODEL;

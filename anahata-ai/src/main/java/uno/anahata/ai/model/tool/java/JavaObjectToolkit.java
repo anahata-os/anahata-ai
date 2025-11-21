@@ -8,12 +8,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
-import uno.anahata.ai.model.tool.ToolParameter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.tool.ToolPermission;
-import uno.anahata.ai.model.tool.Toolkit;
+import uno.anahata.ai.model.tool.AbstractToolkit;
 import uno.anahata.ai.tool.AIToolParam;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolkit;
+import uno.anahata.ai.tool.schema.SchemaProvider;
 
 /**
  * A domain object that parses a Java class via reflection to build a complete,
@@ -22,8 +24,9 @@ import uno.anahata.ai.tool.AiToolkit;
  * This class is the cornerstone of the V2's decoupled tool architecture,
  * separating the parsing of tool metadata from the management and execution of tools.
  */
+@Slf4j
 @Getter
-public class JavaObjectToolkit extends Toolkit<JavaMethodTool> {
+public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> {
 
     /** The singleton instance of the tool class. */
     private final Object toolInstance;
@@ -36,7 +39,7 @@ public class JavaObjectToolkit extends Toolkit<JavaMethodTool> {
      * @param toolClass The class to parse.
      * @throws IllegalArgumentException if the class is not a valid toolkit.
      */
-    public JavaObjectToolkit(Class<?> toolClass) {
+    public JavaObjectToolkit(Class<?> toolClass) throws Exception {
         super(parseToolkitName(toolClass), parseToolkitDescription(toolClass));
         
         try {
@@ -67,43 +70,58 @@ public class JavaObjectToolkit extends Toolkit<JavaMethodTool> {
         return toolClass.getAnnotation(AiToolkit.class).value();
     }
 
-    private JavaMethodTool buildJavaMethodTool(Method method, int defaultRetention) {
+    private JavaMethodTool buildJavaMethodTool(Method method, int defaultRetention) throws Exception {
         AiTool toolAnnotation = method.getAnnotation(AiTool.class);
         String toolName = name + "." + method.getName();
         int retention = toolAnnotation.retention() != 5 ? toolAnnotation.retention() : defaultRetention;
 
-        List<ToolParameter> parameters = Arrays.stream(method.getParameters())
-            .map(this::buildToolParameter)
-            .collect(Collectors.toList());
+        List<JavaMethodToolParameter> parameters = new ArrayList<>();
+        for (Parameter p : method.getParameters()) {
+            parameters.add(buildToolParameter(p));
+        }
 
         ToolPermission defaultPermission = toolAnnotation.requiresApproval()
             ? ToolPermission.APPROVE
             : ToolPermission.APPROVE_ALWAYS;
+            
+        String returnTypeSchema = SchemaProvider.generateInlinedSchemaString(method.getGenericReturnType());
+        if (returnTypeSchema == null) {
+            returnTypeSchema = "{}"; // Represents void or un-schema-able type
+        }
 
         return new JavaMethodTool(
             toolName,
             toolAnnotation.value(),
             defaultPermission,
-            parameters,
+            parameters, // Pass the specific list
             buildMethodSignature(method),
             method,
             retention,
             this.toolInstance, // Pass the instance to the tool for execution
-            this
+            this,
+            returnTypeSchema
         );
     }
 
-    private ToolParameter buildToolParameter(Parameter p) {
+    private JavaMethodToolParameter buildToolParameter(Parameter p) throws Exception {
         AIToolParam paramAnnotation = p.getAnnotation(AIToolParam.class);
         if (paramAnnotation == null) {
             throw new IllegalArgumentException("Parameter '" + p.getName() + "' in method '" + p.getDeclaringExecutable().getName() + "' is missing @AIToolParam annotation.");
         }
-        return ToolParameter.builder()
-            .name(p.getName())
-            .description(paramAnnotation.value())
-            .type(p.getType())
-            .required(paramAnnotation.required())
-            .build();
+        
+        String jsonSchema = SchemaProvider.generateInlinedSchemaString(p.getParameterizedType());
+        if (jsonSchema == null) {
+            throw new IllegalArgumentException("Could not generate schema for parameter " + p.getName() + " in method " + p.getDeclaringExecutable().getName());
+        }
+        
+        return new JavaMethodToolParameter(
+            p.getName(),
+            paramAnnotation.value(),
+            jsonSchema,
+            paramAnnotation.required(),
+            "", // rendererId is not in the annotation
+            p.getParameterizedType()
+        );
     }
 
     private String buildMethodSignature(Method m) {
