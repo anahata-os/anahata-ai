@@ -20,9 +20,9 @@ package uno.anahata.ai.model.tool;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NonNull;
+import uno.anahata.ai.tool.ToolManager;
 
 /**
  * Represents a collection of related tools, parsed from a single Java class.
@@ -31,12 +31,19 @@ import lombok.RequiredArgsConstructor;
  * @author anahata-gemini-pro-2.5
  * @param <T> The specific type of AbstractTool contained in this toolkit.
  */
-@RequiredArgsConstructor
 @Getter
 public abstract class AbstractToolkit<T extends AbstractTool> {
-    public final String name;
-    public final String description;
-    public boolean enabled = true;
+    @NonNull
+    protected final ToolManager toolManager;
+    
+    protected String name;
+    protected String description;
+    protected int defaultRetention;
+    private boolean enabled = true;
+
+    protected AbstractToolkit(@NonNull ToolManager toolManager) {
+        this.toolManager = toolManager;
+    }
     
     /**
      * Gets all tools declared within this toolkit, regardless of their permission status.
@@ -58,5 +65,9 @@ public abstract class AbstractToolkit<T extends AbstractTool> {
         return getAllTools().stream()
                 .filter(tool -> tool.getPermission() != ToolPermission.DENY_NEVER)
                 .collect(Collectors.toList());
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

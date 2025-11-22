@@ -21,11 +21,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.tool.schema.SchemaProvider;
@@ -33,43 +33,45 @@ import uno.anahata.ai.tool.schema.SchemaProvider;
 /**
  * The abstract base class for a tool, now generic on its Parameter and Call types.
  * @author anahata-gemini-pro-2.5
- * @param <P> The specific subclass of ToolParameter this tool uses.
+ * @param <P> The specific subclass of AbstractToolParameter this tool uses.
  * @param <C> The specific subclass of AbstractToolCall this tool creates.
  */
-@RequiredArgsConstructor
 @Getter
 @Slf4j
-public abstract class AbstractTool<P extends ToolParameter, C extends AbstractToolCall> {
+public abstract class AbstractTool<P extends AbstractToolParameter, C extends AbstractToolCall> {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     
-    /** The fully qualified name of the tool, e.g., "LocalFiles.readFile". */
+    /** The default retention policy for tool calls, in number of user turns. */
+    public static final int DEFAULT_RETENTION_TURNS = 5;
+    
+    /** The fully qualified name of the tool, e.g., "LocalFiles.readFile". This is immutable. */
     @NonNull
-    private final String name;
+    protected final String name;
 
     /** A detailed description of what the tool does. */
-    @NonNull
-    private final String description;
+    protected String description;
 
     /** A reference to the parent toolkit that owns this tool. Can be null for standalone tools. */
-    private final AbstractToolkit toolkit;
+    protected AbstractToolkit toolkit;
 
     /** The user's configured preference for this tool, determining its execution behavior. */
     @Setter
-    @Getter
-    @NonNull
-    private ToolPermission permission;
+    protected ToolPermission permission;
 
     /** The number of turns this tool call should be retained in the context. */
     @Setter
     private int retentionTurns;
 
     /** A rich, ordered list of the tool's parameters. */
-    @NonNull
-    private final List<P> parameters;
+    private final List<P> parameters = new ArrayList<>();
     
     /** A pre-generated, language-agnostic JSON schema for the tool's return type. Can be null for void methods. */
-    private final String returnTypeJsonSchema;
+    protected String returnTypeJsonSchema;
 
+    protected AbstractTool(@NonNull String name) {
+        this.name = name;
+    }
+    
     /**
      * Factory method to create a tool-specific call object from raw model data.
      * @param id The call ID.

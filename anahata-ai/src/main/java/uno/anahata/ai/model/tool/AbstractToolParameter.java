@@ -17,21 +17,25 @@
  */
 package uno.anahata.ai.model.tool;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * A rich, self-documenting representation of a single parameter for a tool method.
- * This replaces the primitive Map-based approach with a robust, object-oriented model.
+ * A rich, self-documenting, abstract representation of a single parameter for a tool method.
+ * This is the base class for all tool parameters.
  *
  * @author anahata-gemini-pro-2.5
+ * @param <T> The type of the tool this parameter belongs to.
  */
 @Getter
-@Builder
-@AllArgsConstructor
-public class ToolParameter {
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+public abstract class AbstractToolParameter<T extends AbstractTool<?, ?>> {
+    /** The tool this parameter belongs to. */
+    @NonNull
+    protected final T tool;
+    
     /** The name of the parameter. */
     @NonNull
     private final String name;

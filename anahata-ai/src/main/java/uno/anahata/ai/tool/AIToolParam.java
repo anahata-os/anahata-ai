@@ -33,8 +33,19 @@ import java.lang.annotation.Target;
 public @interface AIToolParam {
     /**
      * A clear and concise description of the parameter's purpose.
+     * @return The description of this parameter
      */
     String value();
     
+    /**
+     * Whether this parameter is required.
+     * @return 
+     */
     boolean required() default true;
+
+    /**
+     * Id of the renderer that will render the value of this parameter (e.g. 'code','path'...).
+     * @return 
+     */
+    String rendererId() default "";
 }

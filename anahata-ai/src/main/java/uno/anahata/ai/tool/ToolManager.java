@@ -81,9 +81,9 @@ public class ToolManager {
         log.info("Registering tool classes...");
         for (Class<?> clazz : classes) {
             try {
-                JavaObjectToolkit toolkit = new JavaObjectToolkit(clazz);
-                toolkits.put(toolkit.name, toolkit);
-                log.info("Registered toolkit: {}", toolkit.name);
+                JavaObjectToolkit toolkit = new JavaObjectToolkit(this, clazz);
+                toolkits.put(toolkit.getName(), toolkit);
+                log.info("Registered toolkit: {}", toolkit.getName());
             } catch (Exception e) {
                 log.error("Failed to register toolkit for class: {}", clazz.getName(), e);
             }
@@ -118,7 +118,7 @@ public class ToolManager {
         // Post-creation checks
         AbstractToolkit toolkit = tool.getToolkit();
         if (toolkit != null && !toolkit.isEnabled()) {
-            String reason = "Tool call rejected: The toolkit '" + toolkit.name + "' is disabled.";
+            String reason = "Tool call rejected: The toolkit '" + toolkit.getName() + "' is disabled.";
             log.warn(reason);
             call.getResponse().reject(reason);
         }

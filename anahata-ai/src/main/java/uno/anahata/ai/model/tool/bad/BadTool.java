@@ -21,7 +21,6 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
 import uno.anahata.ai.model.tool.AbstractTool;
-import uno.anahata.ai.model.tool.ToolParameter;
 import uno.anahata.ai.model.tool.ToolPermission;
 
 /**
@@ -30,17 +29,13 @@ import uno.anahata.ai.model.tool.ToolPermission;
  *
  * @author anahata-gemini-pro-2.5
  */
-public class BadTool extends AbstractTool<ToolParameter, BadToolCall> {
+public class BadTool extends AbstractTool<BadToolParam, BadToolCall> {
 
     public BadTool(String name) {
-        super(
-            name,
-            "Tool not found: " + name,
-            null, // No parent toolkit
-            ToolPermission.DENY_NEVER,
-            Collections.emptyList(),
-            null // No return type schema for a bad tool
-        );
+        super(name);
+        super.description = "Tool not found: " + name;
+        super.permission = ToolPermission.DENY_NEVER;
+        //not even bother with the params
     }
 
     @Override

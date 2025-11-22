@@ -20,16 +20,21 @@ package uno.anahata.ai.model.tool.java;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.ToolPermission;
-import uno.anahata.ai.model.tool.AbstractToolkit;
+import uno.anahata.ai.tool.AiTool;
+import uno.anahata.ai.tool.AiToolkit;
+import uno.anahata.ai.tool.schema.SchemaProvider;
 
 /**
  * A model-agnostic, stateful representation of a single Java method tool.
@@ -53,30 +58,69 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     /** The singleton instance of the toolkit class, used for invoking non-static methods. */
     private final Object toolInstance;
 
-    public JavaMethodTool(
-            @NonNull String name,
-            @NonNull String description,
-            @NonNull ToolPermission permission,
-            @NonNull List<JavaMethodToolParameter> parameters,
-            @NonNull String javaMethodSignature,
-            @NonNull Method method,
-            int retentionTurns,
-            Object toolInstance, // Can be null for static methods
-            AbstractToolkit toolkit,
-            String returnTypeSchema
-    ) {
-        super(name, description, toolkit, permission, parameters, returnTypeSchema);
-        setRetentionTurns(retentionTurns);
-        this.javaMethodSignature = javaMethodSignature;
+    /**
+     * The definitive, intelligent constructor for creating a JavaMethodTool from a reflection Method.
+     * This constructor encapsulates all the logic for parsing annotations and generating schemas.
+     *
+     * @param toolkit The parent toolkit.
+     * @param toolInstance The singleton instance of the class containing the method.
+     * @param method The reflection Method to parse.
+     * @param toolAnnotation The pre-fetched @AiTool annotation.
+     * @throws Exception if schema generation fails.
+     */
+    public JavaMethodTool(JavaObjectToolkit toolkit, Object toolInstance, Method method, AiTool toolAnnotation) throws Exception {
+        super(toolkit.getName() + "." + method.getName());
+
+        // Set parent fields
+        this.toolkit = toolkit;
+        this.permission = toolAnnotation.requiresApproval()
+            ? ToolPermission.APPROVE
+            : ToolPermission.APPROVE_ALWAYS;
+        this.returnTypeJsonSchema = SchemaProvider.generateInlinedSchemaString(method.getGenericReturnType());
+        
+        // Set own fields
         this.method = method;
         this.toolInstance = toolInstance;
+        this.javaMethodSignature = buildMethodSignature(method);
+        
+        // Build description
+        StringBuilder descriptionBuilder = new StringBuilder(toolAnnotation.value());
+        descriptionBuilder.append("\n\njava method signature: ").append(this.javaMethodSignature);
+        this.description = descriptionBuilder.toString();
+
+        // Set retention
+        AiToolkit toolkitAnnotation = toolkit.getClass().getAnnotation(AiToolkit.class);
+        int defaultRetention = (toolkitAnnotation != null) ? toolkitAnnotation.retention() : 5;
+        setRetentionTurns(toolAnnotation.retention() != 5 ? toolAnnotation.retention() : defaultRetention);
+
+        // A tool creates its own parameters.
+        for (java.lang.reflect.Parameter p : method.getParameters()) {
+            getParameters().add(JavaMethodToolParameter.of(this, p));
+        }
+    }
+    
+    private static String buildMethodSignature(Method m) {
+        String signature = Modifier.toString(m.getModifiers())
+            + " " + m.getGenericReturnType().getTypeName()
+            + " " + m.getName() + "("
+            + Arrays.stream(m.getParameters())
+            .map(p -> p.getParameterizedType().getTypeName() + " " + p.getName())
+            .collect(Collectors.joining(", "))
+            + ")";
+
+        if (m.getExceptionTypes().length > 0) {
+            signature += " throws " + Arrays.stream(m.getExceptionTypes())
+                .map(Class::getCanonicalName)
+                .collect(Collectors.joining(", "));
+        }
+        return signature;
     }
 
     @Override
     public JavaMethodToolCall createCall(String id, Map<String, Object> jsonArgs) {
         // 1. Pre-flight validation for required parameters
         List<String> missingParams = new ArrayList<>();
-        for (JavaMethodToolParameter param : getParameters()) { // No cast needed!
+        for (JavaMethodToolParameter param : getParameters()) {
             if (param.isRequired() && !jsonArgs.containsKey(param.getName())) {
                 missingParams.add(param.getName());
             }
@@ -91,7 +135,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         // 2. Convert arguments from JSON types to Java types using our rich parameter models
         Map<String, Object> convertedArgs = new HashMap<>();
         try {
-            for (JavaMethodToolParameter javaParam : getParameters()) { // No cast needed!
+            for (JavaMethodToolParameter javaParam : getParameters()) {
                 String paramName = javaParam.getName();
                 Object rawValue = jsonArgs.get(paramName);
                 if (rawValue != null) {
