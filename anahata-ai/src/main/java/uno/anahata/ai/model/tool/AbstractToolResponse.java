@@ -105,6 +105,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
     }
     
     @Override
+    protected int getDefaultTurnsToKeep() {
+        return getChatConfig().getDefaultToolTurnsToKeep();
+    }
+    
+    @Override
     public String asText() {
         return "[Tool Response: " + getStatus() + ", Result: " + getResult() + "]";
     }

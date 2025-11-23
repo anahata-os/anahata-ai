@@ -78,4 +78,9 @@ public class BlobPart extends AbstractPart {
         String source = sourcePath != null ? ", source: " + sourcePath : "";
         return "[Blob: " + mimeType + ", " + data.length + " bytes" + source + "]";
     }
+
+    @Override
+    protected int getDefaultTurnsToKeep() {
+        return getChatConfig().getDefaultBlobPartTurnsToKeep();
+    }
 }

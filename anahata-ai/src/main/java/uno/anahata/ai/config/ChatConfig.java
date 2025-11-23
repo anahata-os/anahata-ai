@@ -22,6 +22,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 
@@ -30,6 +31,7 @@ import uno.anahata.ai.model.provider.AbstractAiProvider;
  * It defines the blueprint for a chat, including which AI providers and tools are available.
  */
 @Getter
+@Setter
 @RequiredArgsConstructor
 public class ChatConfig {
 
@@ -45,16 +47,28 @@ public class ChatConfig {
      * The list of AI provider classes available for this chat session.
      * The Chat orchestrator will use this list to discover and instantiate providers.
      */
-    @Getter
-    protected List<Class<? extends AbstractAiProvider>> providerClasses = new ArrayList<>();
+    private List<Class<? extends AbstractAiProvider>> providerClasses = new ArrayList<>();
     
     /**
      * The list of tool classes to be used in this chat session.
      * This can be overridden by subclasses to provide a custom set of tools.
      */
-    @Getter
-    protected List<Class<?>> toolClasses = new ArrayList<>();
+    private List<Class<?>> toolClasses = new ArrayList<>();
 
+    //<editor-fold defaultstate="collapsed" desc="V3 Context Management">
+    /** The default number of user turns a TextPart should be kept in context. */
+    private int defaultTextPartTurnsToKeep = 108;
+    
+    /** The default number of user turns a ToolResponse should be kept in context. */
+    private int defaultToolTurnsToKeep = 5;
+    
+    /** The default number of user turns a BlobPart should be kept in context. */
+    private int defaultBlobPartTurnsToKeep = 3;
+    
+    /** The number of turns a part must be soft-pruned before it is eligible for hard-pruning (permanent deletion). */
+    private int hardPruneDelay = 108;
+    //</editor-fold>
+    
     /**
      * Convenience method to get the host application ID from the parent AiConfig.
      * @return The host application ID.

@@ -36,4 +36,9 @@ public class TextPart extends AbstractPart {
     public String asText() {
         return text;
     }
+
+    @Override
+    protected int getDefaultTurnsToKeep() {
+        return getChatConfig().getDefaultTextPartTurnsToKeep();
+    }
 }

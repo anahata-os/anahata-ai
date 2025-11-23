@@ -25,7 +25,18 @@ The foundation of the framework is a set of abstract models that create a standa
     -   `AbstractMessage`: The base class for all messages, with type-safe subclasses `UserMessage`, `ModelMessage`, and `ToolMessage`.
     -   `AbstractPart`: The base for message content, allowing messages to be composed of multiple parts (e.g., `TextPart`, `AbstractToolCall`).
 
-### 2.2. V2 Tool Framework (`uno.anahata.ai.tool` & `uno.anahata.ai.model.tool`)
+### 2.2. V3 Context Management: A Rich Domain Model
+
+The V3 architecture introduces a sophisticated, DDD-aligned context management system built directly into the core domain model.
+
+-   **`Chat`-Aware Domain Objects:** Every `AbstractMessage` holds a non-transient reference to its parent `Chat`. This allows any message or part to access the full conversation context, configuration, and history.
+-   **Intelligent Pruning Logic:** The logic for determining if a part is "pruned" (`isEffectivelyPruned()`) or how many turns it has left (`getTurnsLeft()`) resides directly on the `AbstractPart` object. This creates a clean, self-contained, and easily testable model.
+-   **Two-Phase Pruning:**
+    1.  **Soft Prune:** Parts that are "effectively pruned" (due to age or being explicitly flagged) are not sent to the model, reducing token count, but remain in the session history for inspection.
+    2.  **Hard Prune:** A background process permanently deletes parts that have been soft-pruned for a configurable number of turns, managing long-term memory usage.
+-   **Centralized Configuration:** All default retention policies (e.g., for text parts, tool responses) are centralized in `ChatConfig`, providing a single point of control for the entire system.
+
+### 2.3. V2 Tool Framework (`uno.anahata.ai.tool` & `uno.anahata.ai.model.tool`)
 
 The framework includes a powerful, reflection-based system for defining and executing tools.
 
@@ -34,14 +45,6 @@ The framework includes a powerful, reflection-based system for defining and exec
 -   **Type-Safe Execution:** A `ToolManager` orchestrates the tool lifecycle, using the rich domain model to perform validation and type-safe conversion of arguments from the model's JSON format into Java objects before execution.
 -   **Automated Schema Generation:** A `SchemaProvider` uses reflection to generate detailed, OpenAPI 3-compliant JSON schemas for all tools, ensuring the model receives a precise definition of their capabilities.
 
-### 2.3. Configuration (`uno.anahata.ai.config`)
-
-Configuration is handled through a layered set of objects:
-
--   `AiConfig`: Manages global and application-specific settings, such as working directories.
--   `ChatConfig`: Holds the configuration for a single chat session, including the model ID and registered tool classes.
--   `Preferences`: A serializable POJO for persisting user settings (like tool permissions) to disk using the Kryo serializer.
-
 ### 2.4. Serialization (`uno.anahata.ai.internal.kryo`)
 
--   **Kryo:** The framework uses the high-performance Kryo library for serializing `Preferences` and entire chat sessions to disk. A thread-safe `KryoUtils` class manages Kryo instances.
+-   **Kryo:** The framework uses the high-performance Kryo library for serializing the entire `Chat` object graph, including `Preferences` and the full session history, to disk. A thread-safe `KryoUtils` class manages Kryo instances.

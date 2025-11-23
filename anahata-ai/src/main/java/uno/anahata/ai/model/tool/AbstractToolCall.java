@@ -83,6 +83,12 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
     protected abstract R createResponse();
     
     @Override
+    protected int getDefaultTurnsToKeep() {
+        // A tool call's lifecycle is always identical to its response.
+        return getResponse().getDefaultTurnsToKeep();
+    }
+    
+    @Override
     public String asText() {
         return "[Tool Call: " + getName() + " with args: " + getArgs().toString() + "]";
     }

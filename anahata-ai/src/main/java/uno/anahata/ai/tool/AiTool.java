@@ -44,9 +44,9 @@ public @interface AiTool {
      * The retention policy for this tool's call/response pair in the
      * conversation history, in number of user turns. This serves as a
      * default hint that can be overridden by the model at runtime.
-     * A value of -1 indicates indefinite retention.
+     * A value of -1 indicates that the value should be inherited from the toolkit.
      */
-    int retention() default 5; // System default
+    int retention() default -1; // Inherit from toolkit
 
     /**
      * Determines the default approval behavior for this tool.

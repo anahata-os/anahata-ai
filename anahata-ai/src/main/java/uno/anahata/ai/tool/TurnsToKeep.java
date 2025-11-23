@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Força Barça!
+ * Fora Bara!
  */
 package uno.anahata.ai.tool;
 
@@ -23,26 +23,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method as an AI-callable tool and provides essential metadata.
- * This is the cornerstone of the V2 tool framework.
+ * A dedicated annotation to explicitly define the retention policy for a tool's
+ * call/response pair in the conversation history, in number of user turns.
+ * <p>
+ * This can be applied at the class level (on an {@code @AiToolkit}) or at the
+ * method level (on an {@code @AiTool}). The method-level annotation always
+ * takes precedence.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata-ai
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface AiToolkit {
-
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface TurnsToKeep {
     /**
-     * A detailed description of what the tools on this toolkit do, including its purpose,
-     * usage notes, etc.
+     * The number of user turns the tool call and its response should be
+     * retained in the conversation context.
      */
-    String value();
-
-    /**
-     * The default retention policy for ALL of this toolkit's tools in number of user turns. 
-     * This serves as a default for any tools in this toolkit that do 
-     * not specify a retention policy.
-     * A value of -1 indicates that the value should be inherited from the system default.
-     */
-    int retention() default -1; // Inherit from system default
+    int value();
 }

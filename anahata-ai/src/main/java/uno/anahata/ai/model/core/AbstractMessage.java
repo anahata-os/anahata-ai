@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.ai.Chat;
 
 /**
  * The abstract base class for all messages in a conversation, providing common
@@ -63,9 +64,12 @@ public abstract class AbstractMessage {
     private List<AbstractPart> parts = new ArrayList<>();
 
     /**
-     * A flag indicating whether this message has been pruned from the context.
+     * A backward reference to the Chat session that owns this message.
+     * This is the root of the V3 context management system, allowing any domain
+     * object to access the full application state. It is intentionally not
+     * transient to support full serialization with Kryo.
      */
-    private boolean pruned = false;
+    private Chat chat;
 
     /**
      * Gets the role of the entity that created this message.
@@ -74,6 +78,22 @@ public abstract class AbstractMessage {
      * @return The role of the message creator.
      */
     public abstract Role getRole();
+    
+    /**
+     * Calculates the "depth" of this message, defined as its distance from the
+     * most recent message in the chat history. The head message has a depth of 0.
+     * @return The depth of the message, or -1 if not attached to a chat.
+     */
+    public int getDepth() {
+        if (chat == null) {
+            return -1;
+        }
+        int index = chat.getHistory().indexOf(this);
+        if (index == -1) {
+            return -1;
+        }
+        return chat.getHistory().size() - 1 - index;
+    }
     
     /**
      * Convenience method to get the message content as a single string,

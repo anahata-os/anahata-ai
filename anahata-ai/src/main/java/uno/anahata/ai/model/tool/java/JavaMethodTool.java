@@ -33,7 +33,6 @@ import lombok.NonNull;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.tool.AiTool;
-import uno.anahata.ai.tool.AiToolkit;
 import uno.anahata.ai.tool.schema.SchemaProvider;
 
 /**
@@ -88,10 +87,12 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         descriptionBuilder.append("\n\njava method signature: ").append(this.javaMethodSignature);
         this.description = descriptionBuilder.toString();
 
-        // Set retention
-        AiToolkit toolkitAnnotation = toolkit.getClass().getAnnotation(AiToolkit.class);
-        int defaultRetention = (toolkitAnnotation != null) ? toolkitAnnotation.retention() : 5;
-        setRetentionTurns(toolAnnotation.retention() != 5 ? toolAnnotation.retention() : defaultRetention);
+        // Set retention using the clean inheritance model
+        int retention = toolAnnotation.retention();
+        if (retention == -1) { // Sentinel for inherit
+            retention = toolkit.getDefaultRetention();
+        }
+        setRetentionTurns(retention);
 
         // A tool creates its own parameters.
         for (java.lang.reflect.Parameter p : method.getParameters()) {

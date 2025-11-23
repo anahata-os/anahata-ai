@@ -106,4 +106,14 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         throwable.printStackTrace(pw);
         return sw.toString();
     }
+
+    @Override
+    protected int getDefaultTurnsToKeep() {
+        int toolRetention = getCall().getTool().getRetentionTurns();
+        if (toolRetention != -1) {
+            return toolRetention;
+        }
+        // Fall back to the system-wide default from ChatConfig
+        return getChatConfig().getDefaultToolTurnsToKeep();
+    }
 }

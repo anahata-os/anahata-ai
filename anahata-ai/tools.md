@@ -50,3 +50,10 @@ When the model requests a tool call, the framework follows a robust, multi-step 
 5.  **Result Capturing**: The result, or any exception, is captured in the `JavaMethodToolResponse` object, which is then sent back to the model.
 
 This architecture ensures a clean separation of concerns, robust error handling, and a high degree of type safety throughout the entire tool lifecycle.
+
+### 2.5. V3 Context-Aware Tools
+
+The V3 architecture introduces a new layer of intelligence, allowing tools to participate in their own context lifecycle.
+
+-   **Tool-Driven Retention:** A tool can now dynamically set its own retention policy based on its execution outcome. For example, a `suggestChange` tool can set its `turnsToKeep` to `0` on success (as the change is now in the source code) but set it to `10` on failure or rejection, ensuring the model retains the context of the failed interaction.
+-   **Model-Driven Retention:** A new tool, `ContextWindow.setTurnsToKeep(long partId, int turns)`, will be introduced. This will give the model direct, granular control over the context, allowing it to "pin" critical information (like a `git diff` or a specific error message) for as long as it's needed.

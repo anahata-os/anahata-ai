@@ -37,4 +37,10 @@ public class BadToolCall extends AbstractToolCall<BadTool, BadToolResponse> {
     protected BadToolResponse createResponse() {
         return new BadToolResponse(this);
     }
+
+    @Override
+    protected int getDefaultTurnsToKeep() {
+        return 1;
+    }
+    
 }
