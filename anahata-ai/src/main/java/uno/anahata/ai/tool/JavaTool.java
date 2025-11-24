@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
 import uno.anahata.ai.Chat;
@@ -17,7 +17,7 @@ import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
  * attach files, and access the entire application state without needing any
  * parameters in their method signatures.
  *
- * @author anahata-ai
+ * @author anahata-gemini-pro-2.5
  */
 public abstract class JavaTool {
 
