@@ -1,20 +1,4 @@
-/*
- * Copyright 2025 Anahata.
- *
- * Licensed under the Anahata Software License (ASL) V2.0;
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://github.com/pablo-anahata/anahata-ai-parent/blob/main/LICENSE
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini;
 
 import com.google.genai.Client;
@@ -37,8 +21,8 @@ import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.tool.ToolManager;
 
 /**
- * Gemini-specific implementation of the AiModel.
- * It wraps the native Google GenAI Model object and implements the abstract
+ * Gemini-specific implementation of the {@code AbstractModel}.
+ * It wraps the native Google GenAI {@code Model} object and implements the abstract
  * methods from the superclass by delegating to the wrapped object.
  *
  * @author anahata-gemini-pro-2.5

@@ -1,20 +1,4 @@
-/*
- * Copyright 2025 Anahata.
- *
- * Licensed under the Anahata Software License (ASL) V2.0;
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://github.com/pablo-anahata/anahata-ai-parent/blob/main/LICENSE
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini;
 
 import com.google.genai.Client;
@@ -28,6 +12,13 @@ import uno.anahata.ai.Chat;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 
+/**
+ * The concrete implementation of the {@code AbstractAiProvider} for the Google Gemini API.
+ * This class manages the native {@code Client} instance and handles the discovery
+ * and listing of available Gemini models.
+ *
+ * @author anahata-gemini-pro-2.5
+ */
 @Getter
 public class GeminiAiProvider extends AbstractAiProvider {
 
@@ -41,6 +32,10 @@ public class GeminiAiProvider extends AbstractAiProvider {
         }
     }
 
+    /**
+     * Gets the native Gemini API client, creating it lazily if necessary.
+     * @return The native {@code Client} instance.
+     */
     public synchronized Client getClient() {
         if (client == null) {
             client = Client.builder()
