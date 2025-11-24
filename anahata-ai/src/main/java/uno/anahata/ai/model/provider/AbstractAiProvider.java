@@ -12,10 +12,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.chat.Chat;
 
 /**
  * The abstract base class for all AI model providers, now with model caching.
@@ -26,9 +24,6 @@ import uno.anahata.ai.chat.Chat;
 @Getter
 @Slf4j
 public abstract class AbstractAiProvider {
-    /** The parent Chat session, giving the provider access to the full context. */
-    protected final Chat chat;
-    
     private final String providerId;
     private int round = 0;
     
@@ -37,11 +32,9 @@ public abstract class AbstractAiProvider {
 
     /**
      * Constructs a new provider instance.
-     * @param chat The parent Chat session.
      * @param providerId The unique ID for this provider (e.g., "gemini").
      */
-    public AbstractAiProvider(@NonNull Chat chat, String providerId) {
-        this.chat = chat;
+    public AbstractAiProvider(String providerId) {
         this.providerId = providerId;
     }
 
@@ -123,6 +116,7 @@ public abstract class AbstractAiProvider {
     private List<String> loadKeyPool() {
         Path providerDir = getProviderDirectory();
         Path keysFilePath = providerDir.resolve("api_keys.txt");
+        log.info("Looking for: " + keysFilePath);
 
         if (!Files.exists(providerDir)) {
             try {

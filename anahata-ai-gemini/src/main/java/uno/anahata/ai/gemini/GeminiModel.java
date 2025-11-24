@@ -134,7 +134,7 @@ public class GeminiModel extends AbstractModel {
     public Response generateContent(RequestConfig config, List<AbstractMessage> history) {
         // Get the native client and tool manager from the provider
         Client client = provider.getClient();
-        ToolManager toolManager = provider.getChat().getToolManager();
+        ToolManager toolManager = config.getChat().getToolManager();
 
         // 1. Adapt the anahata-ai request to the Gemini-specific request
         List<Content> googleHistory = ContentAdapter.toGoogle(config, history);
