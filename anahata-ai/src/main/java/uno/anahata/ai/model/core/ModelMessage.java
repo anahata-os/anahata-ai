@@ -21,6 +21,9 @@ public class ModelMessage extends AbstractMessage {
     /** The ID of the model that generated this message. */
     private final String modelId;
     
+    /** A paired message containing the responses to any tool calls in this message. */
+    private ToolMessage toolMessage;
+    
     public ModelMessage(@NonNull String modelId) {
         this.modelId = modelId;
     }
@@ -40,4 +43,24 @@ public class ModelMessage extends AbstractMessage {
                 .map(AbstractToolCall.class::cast)
                 .collect(Collectors.toList());
     }
+    
+    /**
+     * Lazily creates and returns the associated ToolMessage.
+     * It ensures the ToolMessage is properly initialized with the same Chat context
+     * and establishes the back-reference from the ToolMessage to this ModelMessage.
+     * @return The associated ToolMessage, creating it if it doesn't exist.
+     */
+    public ToolMessage getToolMessage() {
+        if (toolMessage == null && !getToolCalls().isEmpty()) {
+            toolMessage = new ToolMessage();
+            toolMessage.setChat(getChat()); // Propagate the chat context
+            toolMessage.setModelMessage(this); // Set the back-reference
+            for (AbstractToolCall toolCall : getToolCalls()) {
+                toolMessage.getParts().add(toolCall.getResponse());
+            }
+        }
+        return toolMessage;
+    }
+    
+    
 }

@@ -13,7 +13,6 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiExecutors;
-import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.ModelMessage;
@@ -23,7 +22,6 @@ import uno.anahata.ai.model.core.ToolMessage;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
-import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.status.StatusManager;
 import uno.anahata.ai.tool.ToolManager;
 
@@ -87,48 +85,70 @@ public class Chat {
     }
 
     /**
-     * Sends a user message to the currently selected AI model and returns the response.
-     * This method does NOT modify the conversation history. The caller is responsible
-     * for choosing a candidate from the response and adding it to the history via
-     * the {@link #chooseCandidate(ModelMessage)} method.
+     * Adds a user message to the context and then triggers the model to generate a response.
      *
      * @param message The user's message.
      * @return The model's response.
      */
     public Response sendMessage(UserMessage message) {
+        contextManager.addMessage(message);
+        return sendToModel();
+    }
+
+    /**
+     * The core method for interacting with the model. It builds the history, sends it,
+     * and processes the response.
+     *
+     * @return The model's response.
+     */
+    private Response sendToModel() {
         if (selectedModel == null) {
             throw new IllegalStateException("A model must be selected before sending a message. Call setSelectedModel().");
         }
-        
-        contextManager.addMessage(message);
-        
+
         RequestConfig requestConfig = config.getRequestConfig();
         List<AbstractMessage> history = contextManager.buildVisibleHistory();
 
         log.info("Sending request to model '{}' with {} messages in history ({} sent to API).",
-                 selectedModel.getModelId(), contextManager.getHistory().size(), history.size());
-        
+                selectedModel.getModelId(), contextManager.getHistory().size(), history.size());
+
         Response response = selectedModel.generateContent(requestConfig, history);
-        
-        // TODO: Implement the full tool processing logic from V1's Chat.java
-        
+
+        // Hydrate all candidates by injecting the chat context and creating the tool message.
+        for (ModelMessage candidate : response.getCandidates()) {
+            candidate.setChat(this);
+            //candidate.getToolMessage(); // trigger lazy creation of the tool message
+        }
+
+        // If the model returns only one candidate, choose it automatically.
+        if (response.getCandidates().size() == 1) {
+            chooseCandidate(response.getCandidates().get(0));
+        }
+
         return response;
     }
     
     /**
-     * Adds a chosen model message (a candidate from a Response) to the conversation history.
-     * If the message contains tool calls, it automatically creates and adds the corresponding
-     * ToolMessage to the history as well.
+     * Adds a chosen model message to the history, handles tool execution, and continues the conversation if necessary.
+     *
      * @param message The model message to add.
      */
     public void chooseCandidate(@NonNull ModelMessage message) {
         contextManager.addMessage(message);
         
-        List<AbstractToolCall> toolCalls = message.getToolCalls();
-        if (!toolCalls.isEmpty()) {
-            ToolMessage toolMessage = new ToolMessage();
-            toolCalls.forEach(tc -> toolMessage.getParts().add(tc.getResponse()));
+        ToolMessage toolMessage = message.getToolMessage();
+        
+        if (toolMessage != null) {
             contextManager.addMessage(toolMessage);
+            
+            if (toolMessage.isAutoRunnable()) {
+                log.info("Auto-running {} tool calls.", toolMessage.getToolResponses().size());
+                toolMessage.executeAllPending();
+                
+                // Automatically send the results back to the model to continue the conversation.
+                log.info("Tool execution complete. Sending results back to the model.");
+                sendToModel();
+            }
         }
     }
     

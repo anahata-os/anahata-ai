@@ -37,15 +37,16 @@ import uno.anahata.ai.model.tool.AbstractToolkit;
 import uno.anahata.ai.model.tool.java.JavaObjectToolkit;
 
 /**
- * Manages the lifecycle of all AI tools, including registration,
- * configuration, and lookup. It stores toolkits and generates the full
- * list of tools on demand.
+ * Manages the lifecycle of all AI tools, including registration, configuration,
+ * and lookup. It stores toolkits and generates the full list of tools on
+ * demand.
  *
  * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 @Getter
 public class ToolManager {
+
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
     private final Chat chat;
@@ -54,15 +55,18 @@ public class ToolManager {
 
     /**
      * Primary constructor for use in a live chat session.
+     *
      * @param chat The parent chat orchestrator.
      */
     public ToolManager(@NonNull Chat chat) {
         this.chat = chat;
         this.config = chat.getConfig().getAiConfig();
     }
-    
+
     /**
-     * Secondary constructor for lightweight instantiation, primarily for unit tests.
+     * Secondary constructor for lightweight instantiation, primarily for unit
+     * tests.
+     *
      * @param config The global AI configuration.
      */
     public ToolManager(@NonNull AiConfig config) {
@@ -99,20 +103,21 @@ public class ToolManager {
      * @param id The unique ID of the tool call (can be null).
      * @param name The name of the tool to call.
      * @param jsonArgs The raw arguments from the model.
-     * @return An {@link AbstractToolCall} with its corresponding, possibly pre-rejected, response.
+     * @return An {@link AbstractToolCall} with its corresponding, possibly
+     * pre-rejected, response.
      */
     public AbstractToolCall createToolCall(String id, String name, Map<String, Object> jsonArgs) {
         String callId = (id == null || id.isEmpty()) ? String.valueOf(callIdGenerator.incrementAndGet()) : id;
 
         Optional<? extends AbstractTool> toolOpt = findToolByName(name);
-        
+
         AbstractTool tool;
         if (toolOpt.isPresent()) {
             tool = toolOpt.get();
         } else {
             tool = new BadTool(name);
         }
-        
+
         AbstractToolCall call = tool.createCall(callId, jsonArgs);
 
         // Post-creation checks
@@ -134,44 +139,46 @@ public class ToolManager {
 
     private Optional<? extends AbstractTool> findToolByName(String name) {
         return getAllTools().stream()
-            .filter(t -> t.getName().equals(name))
-            .findFirst();
+                .filter(t -> t.getName().equals(name))
+                .findFirst();
     }
 
     public List<AbstractToolkit<?>> getEnabledToolkits() {
         return toolkits.values().stream()
-            .filter(AbstractToolkit::isEnabled)
-            .collect(Collectors.toList());
+                .filter(AbstractToolkit::isEnabled)
+                .collect(Collectors.toList());
     }
 
     public List<AbstractToolkit<?>> getDisabledToolkits() {
         return toolkits.values().stream()
-            .filter(tk -> !tk.isEnabled())
-            .collect(Collectors.toList());
+                .filter(tk -> !tk.isEnabled())
+                .collect(Collectors.toList());
     }
 
     /**
-     * Gets a dynamically aggregated list of all tools from all registered toolkits.
-     * This is a view and is generated on each call.
+     * Gets a dynamically aggregated list of all tools from all registered
+     * toolkits. This is a view and is generated on each call.
+     *
      * @return A list of all tools.
      */
     public List<? extends AbstractTool> getAllTools() {
         return toolkits.values().stream()
-            .map(AbstractToolkit::getAllTools)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                .map(AbstractToolkit::getAllTools)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     /**
      * Gets a list of all tools that are currently enabled and allowed to be
      * sent to the model.
+     *
      * @return A filtered list of enabled tools.
      */
     public List<? extends AbstractTool> getEnabledTools() {
         return getEnabledToolkits().stream()
-            .map(AbstractToolkit::getAllowedTools)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+                .map(AbstractToolkit::getAllowedTools)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private void applyPreferences() {

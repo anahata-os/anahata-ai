@@ -3,15 +3,28 @@ package uno.anahata.ai.model.core;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
+import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
+import uno.anahata.ai.model.tool.ToolExecutionStatus;
+import uno.anahata.ai.model.tool.ToolPermission;
 
 /**
  * Represents a message containing the results of tool executions.
  * This message is sent from the client back to the model after function calls.
+ * It holds a direct reference to the {@link ModelMessage} that initiated the tool calls.
  *
  * @author anahata-gemini-pro-2.5
  */
+@Getter
+@Setter
 public class ToolMessage extends AbstractMessage {
+    /**
+     * The ModelMessage that contains the tool calls this message is responding to.
+     */
+    private ModelMessage modelMessage;
+    
     @Override
     public Role getRole() {
         return Role.TOOL;
@@ -27,5 +40,42 @@ public class ToolMessage extends AbstractMessage {
                 .filter(AbstractToolResponse.class::isInstance)
                 .map(p -> (AbstractToolResponse) p)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Determines if this entire batch of tool calls can be executed automatically
+     * without user intervention.
+     * @return {@code true} if all conditions for automatic execution are met.
+     */
+    public boolean isAutoRunnable() {
+        // Condition 1: Check global configuration settings.
+        if (getChat() == null || !getChat().getConfig().isLocalToolsEnabled() || !getChat().getConfig().isAutoReplyTools()) {
+            return false;
+        }
+        
+        List<AbstractToolResponse> responses = getToolResponses();
+        if (responses.isEmpty()) {
+            return false; // Nothing to run.
+        }
+        
+        // Conditions 2 & 3: Check every single tool response.
+        for (AbstractToolResponse response : responses) {
+            AbstractTool tool = response.getCall().getTool();
+            if (tool.getPermission() != ToolPermission.APPROVE_ALWAYS || response.getStatus() != ToolExecutionStatus.PENDING) {
+                return false; // If any tool requires a prompt or is not pending, the batch is not auto-runnable.
+            }
+        }
+        
+        // If all checks pass, the batch can be auto-run.
+        return true;
+    }
+    
+    /**
+     * Executes all tool responses in this message that are currently in a PENDING state.
+     */
+    public void executeAllPending() {
+        getToolResponses().stream()
+            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+            .forEach(AbstractToolResponse::execute);
     }
 }
