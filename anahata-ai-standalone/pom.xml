@@ -23,9 +23,15 @@
             <artifactId>anahata-ai-gemini</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
+            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -46,6 +52,7 @@
                     </execution>
                 </executions>
             </plugin>
+                        -->
         </plugins>
     </build>
 </project>

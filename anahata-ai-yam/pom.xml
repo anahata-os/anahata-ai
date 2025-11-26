@@ -8,6 +8,15 @@
     </parent>
     <artifactId>anahata-ai-yam</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata AI YAM</name>
-    <description>Anahata AI Entertainment</description>
+    <name>Anahata AI Yam</name>
+    <description>Tools for Entertainment</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.android.tools.ddms</groupId>
+            <artifactId>ddmlib</artifactId>
+            <version>25.3.0</version>
+        </dependency>
+    </dependencies>
+    
 </project>

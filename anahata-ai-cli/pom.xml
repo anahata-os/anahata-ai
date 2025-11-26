@@ -9,7 +9,7 @@
 
     <artifactId>anahata-ai-cli</artifactId>
 
-    <name>anahata-ai-cli</name>
+    <name>Anahata AI CLI</name>
     <description>Command Line Interface</description>
 
     <dependencies>

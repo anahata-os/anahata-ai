@@ -44,7 +44,7 @@ public final class RequestConfigAdapter {
 
         if (anahataConfig.getTools() != null && !anahataConfig.getTools().isEmpty()) {
             List<FunctionDeclaration> declarations = anahataConfig.getTools().stream()
-                .map(FunctionDeclarationAdapter::toGoogle)
+                .map(tool -> new GeminiFunctionDeclarationAdapter(tool).toGoogle())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 

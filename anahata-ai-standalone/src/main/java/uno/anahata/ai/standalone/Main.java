@@ -2,7 +2,7 @@ package uno.anahata.ai.standalone;
 
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.cli.App;
+import uno.anahata.ai.cli.Cli;
 import uno.anahata.ai.gemini.GeminiCliChatConfig;
 
 /**
@@ -24,10 +24,32 @@ public class Main {
         
         Chat chat = new Chat(chatConfig);
         
-        // The App will be refactored to accept the chat session.
-        // App cliApp = new App(chat);
-        // cliApp.run();
+        // Check for a command-line argument to pre-select a model.
+        if (args.length > 0) {
+            String providerAndModelId = args[0];
+            System.out.println("Attempting to select model from argument: " + providerAndModelId);
+            
+            int slashIndex = providerAndModelId.indexOf('/');
+            
+            if (slashIndex <= 0 || slashIndex == providerAndModelId.length() - 1) {
+                System.out.println("Invalid model format. Expected 'providerId/modelId'.");
+            } else {
+                String providerId = providerAndModelId.substring(0, slashIndex);
+                String modelId = providerAndModelId.substring(slashIndex + 1);
+                
+                chat.getProviders().stream()
+                    .filter(p -> p.getProviderId().equals(providerId))
+                    .findFirst()
+                    .flatMap(provider -> provider.findModel(modelId))
+                    .ifPresentOrElse(
+                        chat::setSelectedModel,
+                        () -> System.out.println("Model not found: " + providerAndModelId)
+                    );
+            }
+        }
         
-        System.out.println("Framework assembled. CLI logic to be implemented.");
+        // Instantiate the reusable CLI application and run it.
+        Cli cliApp = new Cli(chat);
+        cliApp.run();
     }
 }

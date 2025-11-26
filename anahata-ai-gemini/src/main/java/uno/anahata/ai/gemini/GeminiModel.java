@@ -7,18 +7,19 @@ import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Model;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.gemini.adapter.ContentAdapter;
+import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.gemini.adapter.GeminiContentAdapter;
 import uno.anahata.ai.gemini.adapter.RequestConfigAdapter;
-import uno.anahata.ai.gemini.adapter.ResponseAdapter;
 import uno.anahata.ai.gemini.util.GeminiGsonUtils;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
-import uno.anahata.ai.tool.ToolManager;
 
 /**
  * Gemini-specific implementation of the {@code AbstractModel}.
@@ -131,13 +132,15 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
-    public Response generateContent(RequestConfig config, List<AbstractMessage> history) {
-        // Get the native client and tool manager from the provider
+    public Response generateContent(Chat chat, RequestConfig config, List<AbstractMessage> history) {
         Client client = provider.getClient();
-        ToolManager toolManager = config.getChat().getToolManager();
 
-        // 1. Adapt the anahata-ai request to the Gemini-specific request
-        List<Content> googleHistory = ContentAdapter.toGoogle(config, history);
+        // 1. Adapt the anahata-ai request to the Gemini-specific request using the new OO adapter
+        boolean includePruned = config.isIncludePruned();
+        List<Content> googleHistory = history.stream()
+            .map(msg -> new GeminiContentAdapter(msg, includePruned).toGoogle())
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
         // 2. Make the API call
         log.info("Sending request to Gemini model: {}", getModelId());
@@ -147,7 +150,7 @@ public class GeminiModel extends AbstractModel {
             RequestConfigAdapter.toGoogle(config)
         );
 
-        // 3. Adapt the Gemini-specific response back to the anahata-ai response
-        return ResponseAdapter.toAnahata(response, toolManager, getModelId());
+        // 3. Convert the Gemini response to the Anahata response using the new OO response class.
+        return new GeminiResponse(chat, getModelId(), response);
     }
 }
