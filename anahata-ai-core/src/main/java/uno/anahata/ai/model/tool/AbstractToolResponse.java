@@ -6,10 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.BlobPart;
-import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.TextPart;
 
 /**
@@ -49,6 +47,14 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
 
     public AbstractToolResponse(AbstractToolCall call) {
         super(call.getMessage().getToolMessage());
+    }
+    
+    /**
+     * Gets the name of the tool that was invoked.
+     * @return The tool's name.
+     */
+    public String getToolName() {
+        return getCall().getToolName();
     }
     
     /**

@@ -19,6 +19,9 @@ public enum ChatStatus {
     /** The assistant is waiting for the user to approve/deny tool calls. */
     TOOL_PROMPT("Tool Prompt", "Waiting for user to approve/deny tool calls."),
     
+    /** The model has returned multiple candidates and is waiting for the user to choose one. */
+    CANDIDATE_CHOICE_PROMPT("Candidate Choice", "Waiting for user to select a response candidate."),
+    
     /** Local tool (function) execution is in progress. */
     TOOL_EXECUTION_IN_PROGRESS("Tool Execution...", "Executing local Java tools (functions)."),
     
@@ -29,7 +32,7 @@ public enum ChatStatus {
     MAX_RETRIES_REACHED("Max Retries Reached", "The assistant has stopped after hitting the maximum number of retries."),
     
     /** The model has finished processing and is waiting for the user's next input. */
-    IDLE_WAITING_FOR_USER("Idle", "Waiting for user input.");
+    IDLE("Idle", "Waiting for user input.");
 
     private final String displayName;
     private final String description;

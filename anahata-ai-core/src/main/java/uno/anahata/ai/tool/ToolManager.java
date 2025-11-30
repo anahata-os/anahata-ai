@@ -82,6 +82,14 @@ public class ToolManager {
         this.chat = null; // No parent chat in this context
         this.config = config;
     }
+    
+    /**
+     * Resets the static tool call ID counter to zero.
+     */
+    public void reset() {
+        callIdGenerator.set(0);
+        log.info("ToolManager call ID counter has been reset.");
+    }
 
     /**
      * Scans the given classes for methods annotated with {@link AiTool},

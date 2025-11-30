@@ -59,7 +59,7 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
      * Gets the name of the tool to be invoked.
      * @return The tool's name.
      */
-    public String getName() {
+    public String getToolName() {
         return tool.getName();
     }
     
@@ -106,6 +106,6 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
     
     @Override
     public String asText() {
-        return "[Tool Call: " + getName() + " with args: " + getArgs().toString() + "]";
+        return "[Tool Call: " + getToolName() + " with args: " + getArgs().toString() + "]";
     }
 }

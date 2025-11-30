@@ -84,7 +84,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
 
-            log.error("Tool execution failed for: {}", getCall().getName(), cause);
+            log.error("Tool execution failed for: {}", getCall().getToolName(), cause);
 
             if (cause instanceof AiToolException) {
                 setError(cause.getMessage());

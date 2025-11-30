@@ -5,6 +5,7 @@ package uno.anahata.ai.chat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -18,12 +19,12 @@ import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
-import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.resource.ResourceManager;
 import uno.anahata.ai.status.StatusManager;
+import uno.anahata.ai.tool.ToolManager;
 
 /**
  * The central, provider-agnostic orchestrator for a single chat session in the
@@ -38,7 +39,7 @@ import uno.anahata.ai.status.StatusManager;
 public class Chat {
 
     private final ChatConfig config;
-    private final uno.anahata.ai.tool.ToolManager toolManager;
+    private final ToolManager toolManager;
     private final ContextManager contextManager;
     private final ResourceManager resourceManager;
     private final ExecutorService executor;
@@ -66,7 +67,7 @@ public class Chat {
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
-        this.toolManager = new uno.anahata.ai.tool.ToolManager(this);
+        this.toolManager = new ToolManager(this);
         this.contextManager = new ContextManager(this);
         this.resourceManager = new ResourceManager();
         this.statusManager = new StatusManager(this);
@@ -146,6 +147,30 @@ public class Chat {
             log.info("Tool execution complete. Sending results back to the model.");
             sendToModel();
         }
+    }
+
+    /**
+     * Resets the entire chat session to a clean slate, ready for a new conversation.
+     * This clears all history, resources, and resets the session ID and all counters.
+     */
+    public void clear() {
+        log.info("Clearing chat session {}", config.getSessionId());
+        
+        // 1. Clear history and all context-related counters.
+        contextManager.clear();
+        
+        // 2. Reset status
+        statusManager.reset();
+        
+        // 3. Reset tool call counters
+        toolManager.reset();
+        
+        // 4. Start a new session by updating the ID and name
+        String newSessionId = UUID.randomUUID().toString();
+        config.setSessionId(newSessionId);
+        config.setName(null); // Clear the name, let it default or be set by user
+        
+        log.info("Chat session cleared. New session ID: {}", newSessionId);
     }
 
     /**

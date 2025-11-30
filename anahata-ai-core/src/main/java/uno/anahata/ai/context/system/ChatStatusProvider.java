@@ -26,7 +26,7 @@ public class ChatStatusProvider extends AbstractSystemInstructionsProvider {
     public List<String> getSystemInstructions() throws Exception {
         ChatStatus status = chat.getStatusManager().getLastEvent() != null
             ? chat.getStatusManager().getLastEvent().getStatus()
-            : ChatStatus.IDLE_WAITING_FOR_USER;
+            : ChatStatus.IDLE;
             
         String statusString = "- Chat Status: " + status.getDisplayName() + "\n";
         return Collections.singletonList(statusString);

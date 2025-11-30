@@ -56,6 +56,16 @@ public class ContextManager {
         registerProvider(new ContextSummaryProvider(chat));
         registerProvider(new ChatStatusProvider(chat));
     }
+    
+    /**
+     * Clears the entire conversation history and resets all internal counters to zero.
+     */
+    public void clear() {
+        history.clear();
+        messageIdCounter.set(0);
+        partIdCounter.set(0);
+        log.info("ContextManager cleared for session {}", chat.getConfig().getSessionId());
+    }
 
     public void registerProvider(AbstractSystemInstructionsProvider provider) {
         providers.add(provider);

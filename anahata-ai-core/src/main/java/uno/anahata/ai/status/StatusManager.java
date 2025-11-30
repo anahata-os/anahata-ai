@@ -50,4 +50,11 @@ public class StatusManager {
     public void removeStatusListener(StatusListener listener) {
         listeners.remove(listener);
     }
+    
+    /**
+     * Resets the status manager to its initial, default state.
+     */
+    public void reset() {
+        fireStatusChanged(ChatStatus.IDLE, "Session Reset");
+    }
 }

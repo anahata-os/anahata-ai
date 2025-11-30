@@ -29,7 +29,7 @@ public class ChatConfig {
 
     /** The unique identifier for this specific chat session. */
     @NonNull
-    private final String sessionId;
+    private String sessionId;
     
     /** The user-defined name for this chat session. Defaults to the session ID. */
     private String name;
