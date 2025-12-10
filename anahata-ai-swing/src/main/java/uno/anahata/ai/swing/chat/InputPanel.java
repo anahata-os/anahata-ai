@@ -51,9 +51,9 @@ public class InputPanel extends JPanel {
 
     public InputPanel(Chat chat) {
         super(new BorderLayout(5, 5));
-        this.chat = chat;
-        resetMessage();
+        this.chat = chat;        
         initComponents();
+        resetMessage();
     }
 
     private void initComponents() {

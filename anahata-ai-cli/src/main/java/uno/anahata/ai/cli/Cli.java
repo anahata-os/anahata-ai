@@ -115,7 +115,9 @@ public class Cli {
             new TextPart(userMessage, userInput);
 
             System.out.println("Model: ...");
-            Response<?> response = chat.sendMessage(userMessage);
+            chat.sendMessage(userMessage);
+            
+            /*
 
             List<? extends AbstractModelMessage> candidates = response.getCandidates();
 
@@ -146,12 +148,15 @@ public class Cli {
                 // We just need to display its content.
                 System.out.println(candidates.get(0).asText(true));
             }
+
+
             
             // The chosen candidate (either auto-selected or user-selected) is now in the history.
             // The final output is handled by the Chat.chooseCandidate logic, which may trigger
             // tool execution and a subsequent model call. The CLI only needs to display the final status.
 
             System.out.println("[Finish Reason: " + response.getFinishReason() + ", Total Tokens: " + response.getTotalTokenCount() + "]");
+*/
         }
     }
 }

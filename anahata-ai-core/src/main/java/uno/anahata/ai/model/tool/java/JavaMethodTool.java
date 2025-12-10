@@ -1,8 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.tool.java;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -29,8 +27,7 @@ import uno.anahata.ai.tool.schema.SchemaProvider;
  */
 @Getter
 public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMethodToolCall> {
-    private static final Gson GSON = new Gson();
-
+    
     /** The full Java method signature. */
     @NonNull
     private final String javaMethodSignature;
@@ -125,13 +122,12 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
                 String paramName = javaParam.getName();
                 Object rawValue = jsonArgs.get(paramName);
                 if (rawValue != null) {
-                    String jsonValue = GSON.toJson(rawValue);
                     // Use the stored generic Type for accurate deserialization
-                    Object convertedValue = GSON.fromJson(jsonValue, javaParam.getJavaType());
+                    Object convertedValue = SchemaProvider.OBJECT_MAPPER.convertValue(rawValue, SchemaProvider.OBJECT_MAPPER.constructType(javaParam.getJavaType()));
                     convertedArgs.put(paramName, convertedValue);
                 }
             }
-        } catch (JsonSyntaxException e) {
+        } catch (IllegalArgumentException e) {
             String reason = "Tool call rejected: Failed to convert arguments. Error: " + e.getMessage();
             JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs);
             call.getResponse().reject(reason);

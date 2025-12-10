@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Fora Bara!
+ * Força Barça!
  */
 package uno.anahata.ai.tool;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.model.tool.java.JavaMethodTool;
 import uno.anahata.ai.model.tool.java.JavaMethodToolParameter;
+import uno.anahata.ai.tool.schema.SchemaProvider;
 
 /**
  * Unit tests for the JavaMethodTool class, verifying correct parsing of annotations.
@@ -34,8 +33,7 @@ import uno.anahata.ai.model.tool.java.JavaMethodToolParameter;
  * @author anahata-ai
  */
 public class JavaMethodToolTest {
-    private static final Gson GSON = new Gson();
-    private static final Type MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
+    private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
     private static ToolManager toolManager;
 
     @BeforeAll
@@ -46,7 +44,7 @@ public class JavaMethodToolTest {
     }
 
     @Test
-    public void testParameterAnnotationsAreParsedCorrectly() {
+    public void testParameterAnnotationsAreParsedCorrectly() throws Exception {
         JavaMethodTool sayHelloTool = (JavaMethodTool) toolManager.getAllTools().stream()
             .filter(t -> t.getName().equals("MockToolkit.sayHello"))
             .findFirst()
@@ -58,7 +56,7 @@ public class JavaMethodToolTest {
         JavaMethodToolParameter nameParam = sayHelloTool.getParameters().get(0);
         assertEquals("The name to greet.", nameParam.getDescription());
 
-        Map<String, Object> schema = GSON.fromJson(nameParam.getJsonSchema(), MAP_TYPE);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(nameParam.getJsonSchema(), MAP_TYPE_REF);
         assertEquals(String.class.getName(), schema.get("title"));
     }
 

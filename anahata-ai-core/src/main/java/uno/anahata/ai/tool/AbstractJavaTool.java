@@ -1,9 +1,12 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.model.core.BlobPart;
-import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.internal.TikaUtils;
 import uno.anahata.ai.model.tool.java.JavaMethodTool;
 import uno.anahata.ai.model.tool.java.JavaMethodToolCall;
 import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
@@ -105,20 +108,38 @@ public abstract class AbstractJavaTool {
     }
 
     /**
-     * Attaches a binary part (e.g., an image) to the current tool's response.
-     * @param attachment The BlobPart to attach.
+     * Attaches a binary blob to the current tool's response.
+     * @param data The binary data.
+     * @param mimeType The MIME type of the data.
      */
-    /*
-    protected void attach(BlobPart attachment) {
-        getResponse().addAttachment(attachment);
-    }*/
-
+    protected void addAttachment(byte[] data, String mimeType) {
+        getResponse().addAttachment(data, mimeType);
+    }
+    
     /**
-     * Attaches a text part (e.g., a code snippet) to the current tool's response.
-     * @param attachment The TextPart to attach.
+     * Convenience method to attach a file to the current tool's response.
+     * The MIME type is detected automatically.
+     * @param file The file to attach.
+     * @throws IOException if the file cannot be read.
      */
-    /*
-    protected void attach(TextPart attachment) {
-        getResponse().addAttachment(attachment);
-    }*/
+    protected void addAttachment(File file) throws IOException {
+        addAttachment(file.toPath());
+    }
+    
+    /**
+     * Convenience method to attach a file to the current tool's response.
+     * The MIME type is detected automatically.
+     * @param path The path to the file to attach.
+     * @throws IOException if the file cannot be read.
+     */
+    protected void addAttachment(Path path) throws IOException {
+        byte[] data = Files.readAllBytes(path);
+        String mimeType;
+        try {
+            mimeType = TikaUtils.detectMimeType(path.toFile());
+        } catch (Exception e) {
+            throw new IOException("Failed to detect MIME type for " + path, e);
+        }
+        addAttachment(data, mimeType);
+    }
 }

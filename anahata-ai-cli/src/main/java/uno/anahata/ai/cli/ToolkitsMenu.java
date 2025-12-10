@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.internal.JsonUtils;
+import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolParameter;
 import uno.anahata.ai.model.tool.AbstractToolkit;
@@ -96,7 +96,7 @@ public class ToolkitsMenu {
                     String required = param.isRequired() ? "REQUIRED" : "OPTIONAL";
                     System.out.printf("     - %s (%s): %s\n", param.getName(), required, param.getDescription());
                     System.out.println("       Schema:");
-                    System.out.println("       " + JsonUtils.prettyPrint(param.getJsonSchema()).replace("\n", "\n       "));
+                    System.out.println("       " + JacksonUtils.prettyPrint(param.getJsonSchema()).replace("\n", "\n       "));
                 }
             }
 
@@ -104,7 +104,7 @@ public class ToolkitsMenu {
             if (tool.getResponseJsonSchema() == null) {
                 System.out.println("     (Void)");
             } else {
-                System.out.println("     " + JsonUtils.prettyPrint(tool.getResponseJsonSchema()).replace("\n", "\n     "));
+                System.out.println("     " + JacksonUtils.prettyPrint(tool.getResponseJsonSchema()).replace("\n", "\n     "));
             }
         }
         System.out.println("\nPress ENTER to continue...");

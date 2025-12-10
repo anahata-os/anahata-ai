@@ -23,27 +23,4 @@ public class GeminiToolMessage extends AbstractToolMessage {
         super(modelMessage);
     }
 
-    /**
-     * Converts this message into a native Google GenAI Content object.
-     * This method encapsulates the conversion logic, making the class self-contained.
-     *
-     * @param includePruned Whether to include parts that are effectively pruned.
-     * @return The corresponding Content object, or null if the message has no visible parts.
-     */
-    public Content toGoogleContent(boolean includePruned) {
-        Content.Builder builder = Content.builder()
-            .role(getRole().name().toLowerCase());
-
-        List<Part> googleParts = getParts(includePruned).stream()
-            .map(part -> new GeminiPartAdapter(part).toGoogle())
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-
-        if (googleParts.isEmpty()) {
-            return null; // Don't create a Content object if there are no visible parts
-        }
-
-        builder.parts(googleParts);
-        return builder.build();
-    }
 }

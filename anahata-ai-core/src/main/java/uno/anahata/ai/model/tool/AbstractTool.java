@@ -1,8 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.tool;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +22,6 @@ import uno.anahata.ai.model.core.AbstractModelMessage;
 @Getter
 @Slf4j
 public abstract class AbstractTool<P extends AbstractToolParameter, C extends AbstractToolCall> {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     
     /** The default retention policy for tool calls, in number of user turns. */
     public static final int DEFAULT_RETENTION_TURNS = 5;

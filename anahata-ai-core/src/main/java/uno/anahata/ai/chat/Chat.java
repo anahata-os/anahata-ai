@@ -1,5 +1,5 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ * Licensed under the Anahata Software License (AS IS) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.ai.chat;
 
@@ -58,6 +58,13 @@ public class Chat {
      */
     private volatile boolean running = false;
 
+    /**
+     * A message that has been submitted via {@link #sendMessage(UserMessage)}
+     * while the chat was busy. It will be picked up and processed as soon as
+     * the current conversation turn is complete.
+     */
+    private volatile UserMessage stagedUserMessage;
+
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
@@ -87,30 +94,28 @@ public class Chat {
 
     /**
      * The primary entry point for the UI to send a message. This method is
-     * designed to be called from a background thread (e.g., a SwingWorker). It
-     * adds the message to the context and then ensures the processing loop is
-     * running.
+     * designed to be called from a background thread (e.g., a SwingWorker).
      * <ul>
      * <li>If the chat is idle, this method will start the processing loop and
      * block the calling thread until the entire conversation turn is
      * complete.</li>
-     * <li>If the chat is already busy, it simply adds the message to the
-     * context and returns immediately. The ongoing loop will pick up the new
-     * message on its next iteration.</li>
+     * <li>If the chat is already busy, it will stage the message for later
+     * processing and return immediately. The ongoing loop will pick up the
+     * staged message when its current turn is complete.</li>
      * </ul>
      *
      * @param message The user's message.
      */
     public void sendMessage(@NonNull UserMessage message) {
-        contextManager.addMessage(message);
-
         if (running) {
-            log.info("Chat is busy. Message added to context and will be processed in the current turn.");
+            log.info("Chat is busy. Staging message.");
+            this.stagedUserMessage = message;
             return;
         }
 
         running = true;
         try {
+            contextManager.addMessage(message);
             sendToModel();
         } finally {
             running = false;
@@ -133,6 +138,14 @@ public class Chat {
 
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
+                // Atomically consume any staged message "just-in-time" before building the history.
+                UserMessage messageToProcess = this.stagedUserMessage;
+                if (messageToProcess != null) {
+                    this.stagedUserMessage = null; // Consume it
+                    contextManager.addMessage(messageToProcess);
+                    log.info("Processing staged message.");
+                }
+                
                 // Build config and history *inside* the loop for freshness on retries
                 RequestConfig requestConfig = config.getRequestConfig();
                 List<AbstractMessage> history = contextManager.buildVisibleHistory();

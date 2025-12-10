@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara! */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini.adapter;
 
 import com.google.genai.types.Content;
@@ -29,6 +29,8 @@ public class GeminiContentAdapter {
         Content.Builder builder = Content.builder()
             .role(anahataMessage.getRole().name().toLowerCase());
 
+        // The GeminiPartAdapter now handles all part types, including the complex
+        // AbstractToolResponse (which includes attachments).
         List<Part> googleParts = anahataMessage.getParts(includePruned).stream()
             .map(part -> new GeminiPartAdapter(part).toGoogle())
             .filter(Objects::nonNull)

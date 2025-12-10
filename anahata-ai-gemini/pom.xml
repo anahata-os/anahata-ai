@@ -38,6 +38,12 @@
             <artifactId>lombok</artifactId>
         </dependency>
         
+        <!-- Missing dependency for StringUtils.isNotBlank() -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        
         <!-- Added for testing to enable console logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

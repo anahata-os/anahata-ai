@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.internal.JsonUtils;
+import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.internal.ObjectSummarizer;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
@@ -74,7 +74,7 @@ public class ToolExecutionMenu {
         for (int i = 0; i < responses.size(); i++) {
             AbstractToolResponse r = responses.get(i);
             String status = r.getStatus().name();
-            String name = r.getCall().getName();
+            String name = r.getCall().getToolName();
             String args = ObjectSummarizer.formatValue(r.getCall().getArgs(), 50, false);
             String permission = r.getCall().getTool().getPermission().name();
             
@@ -126,13 +126,13 @@ public class ToolExecutionMenu {
     }
     
     private void displayToolDetails(AbstractToolResponse response) {
-        System.out.println("\n--- Tool Details: " + response.getCall().getName() + " ---");
+        System.out.println("\n--- Tool Details: " + response.getCall().getToolName() + " ---");
         System.out.println("Status: " + response.getStatus());
         System.out.println("Execution Time: " + response.getExecutionTimeMillis() + "ms");
         System.out.println("Current Permission: " + response.getCall().getTool().getPermission().name());
         
         System.out.println("\nArguments (JSON):");
-        System.out.println(JsonUtils.prettyPrint(response.getCall().getArgs().toString()));
+        System.out.println(JacksonUtils.prettyPrint(response.getCall().getArgs().toString()));
         
         System.out.println("\nResult:");
         if (response.getResult() != null) {
@@ -172,7 +172,7 @@ public class ToolExecutionMenu {
             
             // 2. Update the persistent preferences map
             chat.getConfig().getAiConfig().getPreferences().getToolPermissions()
-                .put(response.getCall().getName(), newPermission);
+                .put(response.getCall().getToolName(), newPermission);
             
             // 3. Save the preferences to disk
             chat.getConfig().getAiConfig().savePreferences();

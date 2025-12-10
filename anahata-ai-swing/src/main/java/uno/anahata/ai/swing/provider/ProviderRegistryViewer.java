@@ -17,7 +17,6 @@
  */
 package uno.anahata.ai.swing.provider;
 
-import uno.anahata.ai.swing.components.HtmlWrappingToolTip;
 import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
@@ -53,12 +52,12 @@ public class ProviderRegistryViewer extends JPanel {
         sorter = new TableRowSorter<>(tableModel);
         
         table = new JTable(tableModel) {
-            
+            /*
             @Override
             public JToolTip createToolTip() {
                 // Use the HTML-based custom tooltip
                 return new HtmlWrappingToolTip();
-            }
+            }*/
             
             @Override
             public String getToolTipText(MouseEvent e) {

@@ -6,10 +6,10 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
@@ -20,6 +20,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * A clean, focused provider for generating OpenAPI/Swagger compliant JSON schemas from Java types.
@@ -33,7 +35,8 @@ import java.util.stream.Collectors;
  */
 public class SchemaProvider {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new ParameterNamesModule())
             .registerModule(new MrBeanModule())
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
@@ -157,7 +160,7 @@ public class SchemaProvider {
         return GSON.toJson(finalSchemaMap);
     }
     
-    private static String handleSimpleTypeSchema(Type type) {
+    private static String handleSimpleTypeSchema(Type type) throws JsonProcessingException {
         if (!(type instanceof Class)) {
             return null;
         }

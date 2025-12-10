@@ -17,9 +17,7 @@
  */
 package uno.anahata.ai.tool.schema;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -35,14 +33,13 @@ import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
  * @author anahata-ai
  */
 public class SchemaProviderTest {
-    private static final Gson GSON = new Gson();
-    private static final Type MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
+    private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
     @Test
     public void testSimpleTypeSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(String.class);
         assertNotNull(schemaJson);
-        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
         assertEquals(String.class.getName(), schema.get("title"));
         assertEquals("string", schema.get("type"));
     }
@@ -50,8 +47,9 @@ public class SchemaProviderTest {
     @Test
     public void testComplexObjectSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(MockComplexObject.class);
+        System.out.println("Schema for MockComplexObject.class " + schemaJson);
         assertNotNull(schemaJson);
-        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
         assertEquals(MockComplexObject.class.getName(), schema.get("title"));
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
         assertNotNull(properties);
@@ -66,7 +64,7 @@ public class SchemaProviderTest {
     public void testRecursiveObjectSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(Tree.class);
         assertNotNull(schemaJson);
-        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
         assertEquals(Tree.class.getName(), schema.get("title"));
         Map<String, Object> root = (Map<String, Object>) ((Map<String, Object>) schema.get("properties")).get("root");
         Map<String, Object> children = (Map<String, Object>) ((Map<String, Object>) root.get("properties")).get("children");
@@ -77,8 +75,9 @@ public class SchemaProviderTest {
     @Test
     public void testWrappedRecursiveObjectSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(JavaMethodToolResponse.class, "result", Tree.class);
+        
         assertNotNull(schemaJson);
-        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
         assertEquals(JavaMethodToolResponse.class.getName(), schema.get("title"));
         Map<String, Object> result = (Map<String, Object>) ((Map<String, Object>) schema.get("properties")).get("result");
         assertEquals(Tree.class.getName(), result.get("title"));

@@ -17,21 +17,18 @@
  */
 package uno.anahata.ai.tool.schema;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.tool.MockToolkit;
 import uno.anahata.ai.tool.ToolManager;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class SchemaGenerationTest {
-    private static final Gson GSON = new Gson();
-    private static final Type MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
+    private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
     private static ToolManager toolManager;
 
     @BeforeAll
@@ -42,14 +39,14 @@ public class SchemaGenerationTest {
     }
 
     @Test
-    public void testAllToolSchemasAreCorrectlyWrapped() {
+    public void testAllToolSchemasAreCorrectlyWrapped() throws Exception {
         for (AbstractTool<?, ?> tool : toolManager.getAllTools()) {
             System.out.println("Verifying schema for tool: " + tool.getName());
             
             String responseSchemaJson = tool.getResponseJsonSchema();
             assertNotNull(responseSchemaJson, "Response schema should not be null for tool: " + tool.getName());
 
-            Map<String, Object> responseSchemaMap = GSON.fromJson(responseSchemaJson, MAP_TYPE);
+            Map<String, Object> responseSchemaMap = SchemaProvider.OBJECT_MAPPER.readValue(responseSchemaJson, MAP_TYPE_REF);
             Map<String, Object> properties = (Map<String, Object>) responseSchemaMap.get("properties");
             assertNotNull(properties, "Response schema must have a 'properties' field.");
 
