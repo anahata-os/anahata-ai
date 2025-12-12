@@ -52,6 +52,10 @@ public abstract class AbstractPart {
         this.message = message;
     }
     
+    /**
+     * Removes this part from its parent message and severs the bidirectional link.
+     * This is the primary mechanism for removing attachments from a message.
+     */
     public void remove() {
         message.removePart(this);
         this.message = null;

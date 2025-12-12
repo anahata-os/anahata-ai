@@ -1,6 +1,11 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.core;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
 
 /**
@@ -14,6 +19,7 @@ import uno.anahata.ai.chat.Chat;
  *
  * @author Anahata
  */
+@Slf4j
 public class InputUserMessage extends UserMessage {
 
     /**
@@ -54,5 +60,30 @@ public class InputUserMessage extends UserMessage {
     public boolean isEmpty() {
         // It's empty if it only contains our editable text part AND that part is empty.
         return getParts().size() == 1 && editableTextPart.getText().isEmpty();
+    }
+    
+    /**
+     * Gets a list of all attached {@link BlobPart}s.
+     * 
+     * @return A list of BlobParts.
+     */
+    public List<BlobPart> getAttachments() {
+        return getParts().stream()
+            .filter(p -> p instanceof BlobPart)
+            .map(p -> (BlobPart) p)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Adds a list of file paths as attachments to this message.
+     * 
+     * @param paths The list of file paths to attach.
+     * @throws Exception if a BlobPart cannot be created from a path (e.g., file read error).
+     */
+    public void addAttachments(List<Path> paths) throws Exception {
+        for (Path path : paths) {
+            // BlobPart.from() automatically adds the part to the message via the constructor
+            BlobPart.from(this, path); 
+        }
     }
 }

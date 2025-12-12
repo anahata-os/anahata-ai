@@ -1,4 +1,7 @@
-package uno.anahata.ai.swing;
+/*
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ */
+package uno.anahata.ai.swing.components;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -10,6 +13,8 @@ import javax.swing.SwingConstants;
  * A flexible JPanel that implements the Scrollable interface, allowing for
  * configurable scrolling behavior. This is useful for panels placed in a
  * JScrollPane.
+ *
+ * @author pablo
  */
 public class ScrollablePanel extends JPanel implements Scrollable {
 

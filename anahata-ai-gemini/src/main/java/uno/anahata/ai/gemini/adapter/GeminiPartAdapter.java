@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.BlobPart;
+import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolResponseAttachment;
@@ -35,6 +36,14 @@ public class GeminiPartAdapter {
      * @return The corresponding Google GenAI Part, or null if unsupported.
      */
     public Part toGoogle() {
+        if (anahataPart instanceof ModelTextPart) {
+            ModelTextPart modelText = (ModelTextPart) anahataPart;
+            return Part.builder()
+                .text(modelText.getText())
+                .thought(modelText.isThought())
+                .thoughtSignature(modelText.getThoughtSignature())
+                .build();
+        }
         if (anahataPart instanceof TextPart) {
             return Part.fromText(((TextPart) anahataPart).getText());
         }

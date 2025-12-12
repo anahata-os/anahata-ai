@@ -6,19 +6,32 @@ package uno.anahata.ai.swing.chat;
 import java.awt.Color;
 import java.awt.Font;
 import lombok.Getter;
+import lombok.Setter;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.status.ChatStatus;
+import uno.anahata.ai.swing.chat.render.editorkit.DefaultEditorKitProvider;
+import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 
 /**
  * A concrete ChatConfig for standalone Swing applications, providing UI-specific settings like themes and colors.
  *
  * @author pablo
  */
+@Getter @Setter
 public class SwingChatConfig extends ChatConfig {
+    
+    private final EditorKitProvider editorKitProvider;
+    
+    /**
+     * If true, parts that are effectively pruned will still be rendered in the UI
+     * (e.g., in a collapsed state) to allow the user to inspect and un-prune them.
+     */
+    private boolean showPrunedParts = true;
 
     public SwingChatConfig(AiConfig aiConfig) {
         super(aiConfig, "standalone");
+        this.editorKitProvider = new DefaultEditorKitProvider();
     }
 
     public static Color getColor(ChatStatus status) {

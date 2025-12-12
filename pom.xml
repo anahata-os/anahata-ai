@@ -25,6 +25,7 @@
         <junit.version>5.10.3</junit.version>
         <flatlaf.version>3.4.1</flatlaf.version>
         <jtokkit.version>1.1.0</jtokkit.version>
+        <flexmark.version>0.64.8</flexmark.version>
         <!-- Plugin Versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
@@ -36,6 +37,12 @@
                 <groupId>com.knuddels</groupId>
                 <artifactId>jtokkit</artifactId>
                 <version>${jtokkit.version}</version>
+            </dependency>
+            <!-- Markdown Rendering -->
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>${flexmark.version}</version>
             </dependency>
             <!-- Look and Feel & Swing Components -->
             <dependency>

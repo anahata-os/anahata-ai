@@ -23,7 +23,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
     private Client client;
 
     public GeminiAiProvider() {
-        super("gemini");
+        super("Gemini");
         // Fail fast if no API key is configured.
         if (getApiKey() == null) {
             throw new IllegalStateException("GEMINI_API_KEY is not set or the api_keys.txt file is missing or empty.");

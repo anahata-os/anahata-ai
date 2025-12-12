@@ -8,6 +8,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import lombok.Getter;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 
 /**
  * The main, top-level panel for the Anahata AI Swing UI.
@@ -18,7 +19,8 @@ import uno.anahata.ai.chat.Chat;
 @Getter
 public class ChatPanel extends JPanel {
 
-    private final Chat chat;
+    private final Chat chat; // Now instantiated here
+    private final SwingChatConfig chatConfig; // New field for config
     private final JTabbedPane tabbedPane;
     private final ToolsPanel toolsPanel;
     private final InputPanel inputPanel;
@@ -26,13 +28,15 @@ public class ChatPanel extends JPanel {
     private final ToolbarPanel toolbarPanel;
     private final JPanel conversationPanel; // Placeholder for the main chat view
 
-    public ChatPanel(Chat chat) {
-        this.chat = chat;
+    public ChatPanel(SwingChatConfig chatConfig) { // Changed constructor argument
+        this.chatConfig = chatConfig;
+        this.chat = new Chat(chatConfig); // Instantiate Chat here
+        
         this.tabbedPane = new JTabbedPane();
         this.toolsPanel = new ToolsPanel(chat);
-        this.inputPanel = new InputPanel(chat);
+        this.inputPanel = new InputPanel(this); // FIX: Pass 'this' (ChatPanel)
         this.headerPanel = new HeaderPanel(chat);
-        this.toolbarPanel = new ToolbarPanel(chat);
+        this.toolbarPanel = new ToolbarPanel(this); // FIX: Pass 'this' (ChatPanel)
         this.conversationPanel = new JPanel(); // Simple placeholder
     }
 
@@ -56,5 +60,13 @@ public class ChatPanel extends JPanel {
         add(toolbarPanel, BorderLayout.WEST);
         add(tabbedPane, BorderLayout.CENTER);
         add(inputPanel, BorderLayout.SOUTH);
+    }
+    
+    /**
+     * Convenience method to get the EditorKitProvider from the chat configuration.
+     * @return The EditorKitProvider.
+     */
+    public EditorKitProvider getEditorKitProvider() {
+        return chatConfig.getEditorKitProvider();
     }
 }

@@ -46,7 +46,7 @@ public class SwingMain {
             frame.setPreferredSize(new Dimension(1200, 900));
 
             // Create and initialize the main ChatPanel
-            ChatPanel chatPanel = new ChatPanel(chat);
+            ChatPanel chatPanel = new ChatPanel(chatConfig); // FIX: Pass chatConfig instead of chat
             chatPanel.initComponents();
             frame.add(chatPanel, BorderLayout.CENTER);
 

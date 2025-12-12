@@ -47,7 +47,7 @@ public class HeaderPanel extends JPanel {
 
     public void initComponents() {
         setLayout(new MigLayout("insets 5, fillx, gap 10",
-                                "[][][][]push[][][]", // Component constraints
+                                "[][][]push[][][]", // Component constraints: Nickname, Save, Load, PUSH, Provider, Model, Search
                                 "[]")); // Row constraints
 
         // Nickname Field
@@ -76,11 +76,11 @@ public class HeaderPanel extends JPanel {
         });
         add(loadSessionButton);
 
-        // Provider ComboBox
+        // Provider ComboBox (Right-aligned, skipping the push column)
         providerComboBox = new JComboBox<>();
         providerComboBox.setToolTipText("Select AI Provider");
         providerComboBox.setRenderer(new ProviderRenderer());
-        add(providerComboBox, "w 150!");
+        add(providerComboBox, "skip 1, w 150!");
 
         // Model ComboBox
         modelComboBox = new JComboBox<>();
@@ -135,9 +135,14 @@ public class HeaderPanel extends JPanel {
             .flatMap(provider -> provider.getModels().stream())
             .collect(Collectors.toList());
 
-        ProviderRegistryViewer viewer = new ProviderRegistryViewer(allModels);
-        
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Provider & Model Registry", JDialog.ModalityType.MODELESS);
+        
+        ProviderRegistryViewer viewer = new ProviderRegistryViewer(allModels, selectedModel -> {
+            // Handle model selection: set the model in the combo box and close the dialog
+            modelComboBox.setSelectedItem(selectedModel);
+            dialog.dispose();
+        });
+        
         dialog.getContentPane().add(viewer);
         dialog.setPreferredSize(new Dimension(1200, 800));
         dialog.pack();

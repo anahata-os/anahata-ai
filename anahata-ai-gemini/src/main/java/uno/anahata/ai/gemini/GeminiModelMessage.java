@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara! */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini;
 
 import com.google.genai.types.Content;
@@ -13,7 +13,7 @@ import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.AbstractToolMessage;
-import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 
 /**
@@ -60,7 +60,14 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiToolMessage> 
      */
     private AbstractPart toAnahataPart(Part googlePart) {
         if (googlePart.text().isPresent()) {
-            return new TextPart(this, googlePart.text().get());
+            String text = googlePart.text().get();
+            
+            // As requested, all model text parts should be ModelTextPart.
+            // Extract optional thought metadata.
+            boolean thought = googlePart.thought().orElse(false);
+            byte[] thoughtSignature = googlePart.thoughtSignature().orElse(null);
+            
+            return new ModelTextPart(this, text, thoughtSignature, thought);
         }
         if (googlePart.functionCall().isPresent()) {
             return toAnahataToolCall(googlePart.functionCall().get());

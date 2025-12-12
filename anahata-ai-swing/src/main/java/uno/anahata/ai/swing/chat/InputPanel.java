@@ -4,21 +4,29 @@
 package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTextArea;
+import org.jdesktop.swingx.JXTitledPanel;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.swing.icons.IconUtils;
 import uno.anahata.ai.swing.icons.MicrophoneIcon;
 import uno.anahata.ai.swing.icons.RecordingIcon;
+import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.ai.swing.internal.SwingTask;
+import uno.anahata.ai.swing.internal.UICapture;
 
 /**
  * A fully functional and responsive user input component for the V2 chat.
@@ -31,9 +39,10 @@ import uno.anahata.ai.swing.internal.SwingTask;
  */
 @Slf4j
 @Getter
-public class InputPanel extends JPanel {
+public class InputPanel extends JXTitledPanel {
 
     private final Chat chat;
+    private final ChatPanel chatPanel; // New field for ChatPanel
 
     // UI Components
     private JXTextArea inputTextArea;
@@ -42,6 +51,8 @@ public class InputPanel extends JPanel {
     private JButton attachButton;
     private JButton screenshotButton;
     private JButton captureFramesButton;
+    private InputMessageRenderer inputMessageRenderer; // Renamed Field
+    private JScrollPane previewScrollPane; // New field to hold the scroll pane reference
 
     /**
      * The "live" message being composed by the user. This is the single source
@@ -49,15 +60,17 @@ public class InputPanel extends JPanel {
      */
     private InputUserMessage currentMessage;
 
-    public InputPanel(Chat chat) {
-        super(new BorderLayout(5, 5));
-        this.chat = chat;        
+    public InputPanel(ChatPanel chatPanel) { // Changed constructor argument
+        super("User Input");
+        setLayout(new BorderLayout(5, 5));
+        this.chatPanel = chatPanel;
+        this.chat = chatPanel.getChat(); // Get Chat from ChatPanel
         initComponents();
-        resetMessage();
+        // Initial message reset is now handled in initComponents
     }
 
     private void initComponents() {
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        // setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Removed: JXTitledPanel manages its own border
 
         inputTextArea = new JXTextArea("Type your message here (Ctrl+Enter to send)");
         inputTextArea.setLineWrap(true);
@@ -65,22 +78,7 @@ public class InputPanel extends JPanel {
 
         // --- REAL-TIME MODEL UPDATE ---
         // Listen for changes in the text area and update the live message model instantly.
-        inputTextArea.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                updateMessageText();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                updateMessageText();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                updateMessageText();
-            }
-        });
+        inputTextArea.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::updateMessageText));
 
         // Ctrl+Enter to send
         KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_DOWN_MASK);
@@ -93,7 +91,20 @@ public class InputPanel extends JPanel {
         });
 
         JScrollPane inputScrollPane = new JScrollPane(inputTextArea);
-        add(inputScrollPane, BorderLayout.CENTER);
+        
+        // --- INITIAL PREVIEW PANEL INTEGRATION ---
+        // Create initial message and renderer
+        this.currentMessage = new InputUserMessage(chat);
+        this.inputMessageRenderer = new InputMessageRenderer(chatPanel, currentMessage);
+        
+        // Store the scroll pane reference
+        previewScrollPane = new JScrollPane(inputMessageRenderer);
+        
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputScrollPane, previewScrollPane);
+        splitPane.setResizeWeight(0.5); // Equal split initially
+        splitPane.setDividerLocation(0.5);
+        
+        add(splitPane, BorderLayout.CENTER); // Add the split pane instead of the input scroll pane
 
         // Panel for buttons on the south side
         JPanel southButtonPanel = new JPanel(new BorderLayout(5, 0));
@@ -107,12 +118,15 @@ public class InputPanel extends JPanel {
 
         attachButton = new JButton(IconUtils.getIcon("attach.png"));
         attachButton.setToolTipText("Attach Files");
+        attachButton.addActionListener(e -> attachFiles());
 
         screenshotButton = new JButton(IconUtils.getIcon("desktop_screenshot.png"));
         screenshotButton.setToolTipText("Attach Desktop Screenshot");
+        screenshotButton.addActionListener(e -> attachScreenshot());
 
         captureFramesButton = new JButton(IconUtils.getIcon("capture_frames.png"));
         captureFramesButton.setToolTipText("Attach Application Frames");
+        captureFramesButton.addActionListener(e -> attachWindowCaptures());
 
         actionButtonPanel.add(micButton);
         actionButtonPanel.add(attachButton);
@@ -130,10 +144,96 @@ public class InputPanel extends JPanel {
 
     /**
      * Updates the underlying {@code currentMessage} model with the current text
-     * from the input area.
+     * from the input area and updates the preview panel.
      */
     private void updateMessageText() {
         currentMessage.setText(inputTextArea.getText());
+        inputMessageRenderer.render();
+    }
+    
+    private void attachFiles() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setMultiSelectionEnabled(true);
+        int result = fileChooser.showOpenDialog(this);
+        
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File[] selectedFiles = fileChooser.getSelectedFiles();
+            
+            SwingTask.run(
+                () -> {
+                    // Collect Paths from selected Files
+                    List<Path> paths = Arrays.stream(selectedFiles)
+                        .map(File::toPath)
+                        .collect(Collectors.toList());
+                    
+                    // FIX: Use the new convenience method
+                    currentMessage.addAttachments(paths);
+                    return null;
+                },
+                (v) -> {
+                    // On Success (UI Thread)
+                    inputMessageRenderer.render(); // Refresh preview
+                },
+                (error) -> {
+                    // On Error (UI Thread)
+                    log.error("Failed to attach files", error);
+                    JOptionPane.showMessageDialog(this,
+                                                  "Failed to attach files: " + error.getMessage(),
+                                                  "Error",
+                                                  JOptionPane.ERROR_MESSAGE);
+                }
+            );
+        }
+    }
+    
+    private void attachScreenshot() {
+        SwingTask.run(
+            () -> {
+                // Get Paths from UICapture
+                List<Path> files = UICapture.screenshotAllScreenDevices();
+                
+                // FIX: Use the new convenience method
+                currentMessage.addAttachments(files);
+                return null;
+            },
+            (v) -> {
+                // On Success (UI Thread)
+                inputMessageRenderer.render(); // Refresh preview
+            },
+            (error) -> {
+                // On Error (UI Thread)
+                log.error("Failed to capture screenshot", error);
+                JOptionPane.showMessageDialog(this,
+                                              "Failed to capture screenshot: " + error.getMessage(),
+                                              "Error",
+                                              JOptionPane.ERROR_MESSAGE);
+            }
+        );
+    }
+    
+    private void attachWindowCaptures() {
+        SwingTask.run(
+            () -> {
+                // Get Paths from UICapture
+                List<Path> files = UICapture.screenshotAllJFrames();
+                
+                // FIX: Use the new convenience method
+                currentMessage.addAttachments(files);
+                return null;
+            },
+            (v) -> {
+                // On Success (UI Thread)
+                inputMessageRenderer.render(); // Refresh preview
+            },
+            (error) -> {
+                // On Error (UI Thread)
+                log.error("Failed to capture application frames", error);
+                JOptionPane.showMessageDialog(this,
+                                              "Failed to capture application frames: " + error.getMessage(),
+                                              "Error",
+                                              JOptionPane.ERROR_MESSAGE);
+            }
+        );
     }
 
     /**
@@ -176,7 +276,9 @@ public class InputPanel extends JPanel {
                 // Restore UI state
                 setButtonsEnabled(true);
                 inputTextArea.setText(textToRestoreOnError); // Restore the text
-                this.currentMessage = messageToSend; // Restore the message with attachments
+                
+                // FIX: Create a new renderer for the restored message and replace the old one
+                replaceRenderer(messageToSend);
             }
         );
     }
@@ -187,7 +289,27 @@ public class InputPanel extends JPanel {
      */
     private void resetMessage() {
         inputTextArea.setText("");
-        this.currentMessage = new InputUserMessage(chat);
+        replaceRenderer(new InputUserMessage(chat));
+    }
+    
+    /**
+     * Replaces the current InputMessageRenderer with a new one, updating the JScrollPane.
+     * @param newMessage The new message model to use.
+     */
+    private void replaceRenderer(InputUserMessage newMessage) {
+        // 1. Create the new renderer
+        InputMessageRenderer newRenderer = new InputMessageRenderer(chatPanel, newMessage);
+        
+        // 2. Replace the viewport view of the existing scroll pane
+        previewScrollPane.setViewportView(newRenderer);
+        
+        // 3. Update internal fields
+        this.currentMessage = newMessage;
+        this.inputMessageRenderer = newRenderer;
+        
+        // 4. Revalidate and repaint the scroll pane
+        previewScrollPane.revalidate();
+        previewScrollPane.repaint();
     }
 
     private void setButtonsEnabled(boolean enabled) {

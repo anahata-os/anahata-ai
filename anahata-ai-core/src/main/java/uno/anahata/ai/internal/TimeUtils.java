@@ -1,4 +1,4 @@
-package uno.anahata.ai.swing.internal;
+package uno.anahata.ai.internal;
 
 import java.time.Duration;
 import java.time.Instant;

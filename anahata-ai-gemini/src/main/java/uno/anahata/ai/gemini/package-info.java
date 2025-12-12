@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara! */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 /**
  * Provides the concrete implementation of the {@code anahata-ai} core framework
  * for the Google Gemini API. This module acts as the primary adapter.
