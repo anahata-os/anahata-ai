@@ -11,6 +11,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -21,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
 import org.apache.commons.lang3.StringUtils;
+import org.jdesktop.swingx.JXHyperlink;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.internal.TimeUtils;
 import uno.anahata.ai.model.core.Response;
@@ -28,7 +31,9 @@ import uno.anahata.ai.model.core.ResponseUsageMetadata;
 import uno.anahata.ai.status.ApiErrorRecord;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusManager;
+import uno.anahata.ai.swing.chat.render.CodeBlockSegmentRenderer;
 import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.swing.media.util.AudioPlayer; // Added import
 
 /**
  * A panel that displays the real-time status of the chat session, including
@@ -41,6 +46,8 @@ public class StatusPanel extends JPanel {
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
 
     private final ChatPanel chatPanel;
+    private final Chat chat;
+    private final SwingChatConfig chatConfig;
     private final Timer refreshTimer;
     private ChatStatus lastStatus = null;
 
@@ -50,11 +57,14 @@ public class StatusPanel extends JPanel {
     private ContextUsageBar contextUsageBar;
     private JPanel detailsPanel;
     private JLabel tokenDetailsLabel;
+    private JXHyperlink rawJsonLink;
     private JToggleButton soundToggle;
 
     public StatusPanel(ChatPanel chatPanel) {
         super(new BorderLayout(10, 2));
         this.chatPanel = chatPanel;
+        this.chat = chatPanel.getChat();
+        this.chatConfig = chatPanel.getChatConfig();
         initComponents();
         
         this.refreshTimer = new Timer(1000, e -> refresh());
@@ -84,9 +94,8 @@ public class StatusPanel extends JPanel {
         soundToggle = new JToggleButton(IconUtils.getIcon("bell.png"));
         soundToggle.setSelectedIcon(IconUtils.getIcon("bell_mute.png"));
         soundToggle.setToolTipText("Toggle Sound Notifications");
-        // Use V2 ChatConfig for audio feedback setting
-        soundToggle.setSelected(!chatPanel.getChatConfig().isAudioFeedbackEnabled());
-        soundToggle.addActionListener(e -> chatPanel.getChatConfig().setAudioFeedbackEnabled(!soundToggle.isSelected()));
+        soundToggle.setSelected(!chatConfig.isAudioFeedbackEnabled());
+        soundToggle.addActionListener(e -> chatConfig.setAudioFeedbackEnabled(!soundToggle.isSelected()));
 
         statusDisplayPanel.add(soundToggle);
         statusDisplayPanel.add(statusIndicator);
@@ -101,14 +110,27 @@ public class StatusPanel extends JPanel {
         detailsPanel.setVisible(false);
         
         tokenDetailsLabel = new JLabel();
+        rawJsonLink = new JXHyperlink();
+        rawJsonLink.setText("JSON");
+        rawJsonLink.setToolTipText("View raw JSON response");
+        rawJsonLink.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (chat.getLastResponse().isPresent()) {
+                    String rawJson = chat.getLastResponse().get().getRawJson();
+                    new CodeBlockSegmentRenderer(chatPanel, rawJson, "json").showInPopup("Raw JSON Response");
+                }
+            }
+        });
+        
         detailsPanel.add(tokenDetailsLabel);
+        detailsPanel.add(rawJsonLink);
 
         add(topPanel, BorderLayout.NORTH);
         add(detailsPanel, BorderLayout.CENTER);
     }
 
     public void refresh() {
-        Chat chat = chatPanel.getChat();
         if (chat.isShutdown()) {
             if (refreshTimer.isRunning()) refreshTimer.stop();
             return;
@@ -117,11 +139,10 @@ public class StatusPanel extends JPanel {
         StatusManager statusManager = chat.getStatusManager();
         ChatStatus currentStatus = statusManager.getCurrentStatus();
         long now = System.currentTimeMillis();
-        Color statusColor = chatPanel.getChatConfig().getColor(currentStatus);
+        Color statusColor = chatConfig.getColor(currentStatus);
 
-        // Play sound on status change (AudioPlayer needs to be ported/implemented)
-        if (lastStatus != currentStatus && chatPanel.getChatConfig().isAudioFeedbackEnabled()) {
-            // handleStatusSound(currentStatus); // Temporarily commented out
+        if (lastStatus != currentStatus && chatConfig.isAudioFeedbackEnabled()) {
+            handleStatusSound(currentStatus);
         }
         this.lastStatus = currentStatus;
 
@@ -157,7 +178,7 @@ public class StatusPanel extends JPanel {
 
         if (isRetrying) {
             detailsPanel.removeAll();
-            detailsPanel.setLayout(new GridLayout(0, 1)); // Vertical for errors
+            detailsPanel.setLayout(new GridLayout(0, 1));
             ApiErrorRecord lastError = errors.get(errors.size() - 1);
             long totalErrorTime = now - lastError.getTimestamp().toEpochMilli();
             String headerText = String.format("Retrying... Total Time: %s | Attempt: %d | Next Backoff: %dms",
@@ -198,9 +219,12 @@ public class StatusPanel extends JPanel {
                 String candidates = "Candidates: " + NUMBER_FORMAT.format(usage.getCandidatesTokenCount());
                 String cached = "Cached: " + NUMBER_FORMAT.format(usage.getCachedContentTokenCount());
                 String thoughts = "Thoughts: " + NUMBER_FORMAT.format(usage.getThoughtsTokenCount());
+                String toolPrompt = "Tool Prompt: " + NUMBER_FORMAT.format(usage.getToolUsePromptTokenCount());
+                String total = "Total: " + NUMBER_FORMAT.format(usage.getTotalTokenCount());
 
-                tokenDetailsLabel.setText(String.join(" | ", prompt, candidates, cached, thoughts));
+                tokenDetailsLabel.setText(String.join(" | ", prompt, candidates, cached, thoughts, toolPrompt, total));
                 detailsPanel.add(tokenDetailsLabel);
+                detailsPanel.add(rawJsonLink);
             }
             
             detailsPanel.setVisible(true);
@@ -213,10 +237,10 @@ public class StatusPanel extends JPanel {
         repaint();
     }
     
-    // private void handleStatusSound(ChatStatus newStatus) {
-    //     String soundFileName = newStatus.name().toLowerCase() + ".wav";
-    //     AudioPlayer.playSound(soundFileName);
-    // }
+    private void handleStatusSound(ChatStatus newStatus) {
+        String soundFileName = newStatus.name().toLowerCase() + ".wav";
+        AudioPlayer.playSound(soundFileName);
+    }
     
     /**
      * A simple component that paints a colored circle.

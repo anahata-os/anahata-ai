@@ -8,7 +8,10 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
+import org.jdesktop.swingx.JXErrorPane;
+import org.jdesktop.swingx.error.ErrorInfo;
 
 /**
  * A collection of general-purpose Swing utility methods, primarily for image
@@ -58,5 +61,25 @@ public class SwingUtils {
      */
     public static String toHtmlColor(Color color) {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+    }
+
+    /**
+     * Displays a modal SwingX error dialog with the given task name, description, and throwable.
+     * This method assumes it is called on the Event Dispatch Thread (EDT).
+     *
+     * @param taskName The name of the task that failed.
+     * @param description A brief description of the error.
+     * @param throwable The Throwable object representing the exception.
+     */
+    public static void showException(String taskName, String description, Throwable throwable) {
+        ErrorInfo errorInfo = new ErrorInfo(
+                taskName,
+                description,
+                throwable.getMessage(),
+                "Error",
+                throwable,
+                java.util.logging.Level.SEVERE,
+                null);
+        JXErrorPane.showDialog(SwingUtilities.getWindowAncestor(null), errorInfo);
     }
 }

@@ -26,6 +26,7 @@ public class ChatPanel extends JPanel {
     private final InputPanel inputPanel;
     private final HeaderPanel headerPanel;
     private final ToolbarPanel toolbarPanel;
+    private final StatusPanel statusPanel; // New: StatusPanel
     private final JPanel conversationPanel; // Placeholder for the main chat view
 
     public ChatPanel(SwingChatConfig chatConfig) { // Changed constructor argument
@@ -37,6 +38,7 @@ public class ChatPanel extends JPanel {
         this.inputPanel = new InputPanel(this); // FIX: Pass 'this' (ChatPanel)
         this.headerPanel = new HeaderPanel(chat);
         this.toolbarPanel = new ToolbarPanel(this); // FIX: Pass 'this' (ChatPanel)
+        this.statusPanel = new StatusPanel(this); // New: Instantiate StatusPanel
         this.conversationPanel = new JPanel(); // Simple placeholder
     }
 
@@ -55,11 +57,16 @@ public class ChatPanel extends JPanel {
         tabbedPane.addTab("Chat", conversationPanel);
         tabbedPane.addTab("Tools", toolsPanel);
 
+        // Create a panel to hold both InputPanel and StatusPanel
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.add(inputPanel, BorderLayout.NORTH); // InputPanel at the top of the bottom area
+        southPanel.add(statusPanel, BorderLayout.SOUTH); // StatusPanel below the input
+
         // Add components to the main panel
         add(headerPanel, BorderLayout.NORTH);
         add(toolbarPanel, BorderLayout.WEST);
         add(tabbedPane, BorderLayout.CENTER);
-        add(inputPanel, BorderLayout.SOUTH);
+        add(southPanel, BorderLayout.SOUTH); // Add the combined south panel
     }
     
     /**

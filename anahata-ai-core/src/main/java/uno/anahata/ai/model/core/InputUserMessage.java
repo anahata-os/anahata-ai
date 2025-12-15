@@ -2,6 +2,7 @@
 package uno.anahata.ai.model.core;
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -75,15 +76,24 @@ public class InputUserMessage extends UserMessage {
     }
     
     /**
-     * Adds a list of file paths as attachments to this message.
+     * Adds a single file path as an attachment to this message.
      * 
-     * @param paths The list of file paths to attach.
+     * @param path The file path to attach.
+     * @throws Exception if a BlobPart cannot be created from the path (e.g., file read error).
+     */
+    public void addAttachment(Path path) throws Exception {
+        BlobPart.from(this, path);
+    }
+
+    /**
+     * Adds a collection of file paths as attachments to this message.
+     * 
+     * @param paths The collection of file paths to attach.
      * @throws Exception if a BlobPart cannot be created from a path (e.g., file read error).
      */
-    public void addAttachments(List<Path> paths) throws Exception {
+    public void addAttachments(Collection<Path> paths) throws Exception {
         for (Path path : paths) {
-            // BlobPart.from() automatically adds the part to the message via the constructor
-            BlobPart.from(this, path); 
+            addAttachment(path); // Call the single-path method
         }
     }
 }

@@ -3,13 +3,20 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
+import java.awt.BorderLayout;
+import java.awt.Dialog;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Window;
 import java.util.Objects;
 import java.util.logging.Level;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
+import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.text.EditorKit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +65,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             JComponent innerComponent;
             if (editorKitProvider == null) {
                 log.warn("EditorKitProvider is null. Cannot render code block.");
-                innerComponent = createFallbackPane(currentContent);
+                innerComponent = createFallbackTextArea(currentContent);
             } else {
                 JEditorPane codeEditor = new JEditorPane();
                 codeEditor.setEditable(false);
@@ -67,7 +74,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                     EditorKit kit = editorKitProvider.getEditorKitForLanguage(language);
                     if (kit == null) {
                         log.warn("No EditorKit found for language '" + language + "'. Falling back to plain text for code.");
-                        innerComponent = createFallbackPane(currentContent);
+                        innerComponent = createFallbackTextArea(currentContent);
                     } else {
                         codeEditor.setEditorKit(kit);
                         codeEditor.getDocument().putProperty("mimeType", kit.getContentType());
@@ -76,7 +83,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                     }
                 } catch (Exception e) {
                     log.warn("Failed to render code block for language '" + language + "'.", e);
-                    innerComponent = createFallbackPane(currentContent);
+                    innerComponent = createFallbackTextArea(currentContent);
                 }
             }
             // Always wrap the inner component in a JScrollPane
@@ -101,12 +108,42 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
     }
 
     /**
+     * Displays the content of this code block renderer in a non-modal popup dialog.
+     *
+     * @param title The title of the dialog.
+     */
+    public void showInPopup(String title) {
+        Window ancestorWindow = SwingUtilities.getWindowAncestor(chatPanel);
+        JDialog dialog;
+        if (ancestorWindow instanceof JDialog) {
+            dialog = new JDialog((JDialog) ancestorWindow, title, Dialog.ModalityType.MODELESS);
+        } else if (ancestorWindow instanceof JFrame) {
+            dialog = new JDialog((JFrame) ancestorWindow, title, Dialog.ModalityType.MODELESS);
+        } else {
+            dialog = new JDialog((JFrame) null, title, Dialog.ModalityType.MODELESS); // Fallback to null parent
+        }
+        
+        dialog.setLayout(new BorderLayout());
+        dialog.setPreferredSize(new Dimension(800, 600));
+
+        // Create the component using the existing render logic
+        JComponent contentComponent = render();
+        
+        // The render method already wraps the inner component in a JScrollPane, so we just add it.
+        dialog.add(contentComponent, BorderLayout.CENTER);
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(chatPanel);
+        dialog.setVisible(true);
+    }
+
+    /**
      * Creates a fallback JTextArea for displaying code when syntax highlighting is not available.
      *
      * @param code The code to display.
      * @return A JTextArea.
      */
-    private JComponent createFallbackPane(String code) {
+    private JComponent createFallbackTextArea(String code) {
         JTextArea fallbackEditor = new JTextArea(code, 10, 80);
         fallbackEditor.setEditable(false);
         fallbackEditor.setLineWrap(true);

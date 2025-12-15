@@ -8,14 +8,30 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SwingTask<T> extends SwingWorker<T, Void> {
+    private final String taskName;
     private final Callable<T> backgroundTask;
     private final Consumer<T> onDone;
     private final Consumer<Exception> onError;
+    private final boolean showError;
 
-    private SwingTask(Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
+    public SwingTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
+        this.taskName = taskName;
         this.backgroundTask = backgroundTask;
         this.onDone = onDone;
         this.onError = onError;
+        this.showError = showError;
+    }
+
+    public SwingTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
+        this(taskName, backgroundTask, onDone, onError, true);
+    }
+
+    public SwingTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
+        this(taskName, backgroundTask, onDone, null, true);
+    }
+
+    public SwingTask(String taskName, Callable<T> backgroundTask) {
+        this(taskName, backgroundTask, null, null, true);
     }
 
     @Override
@@ -31,16 +47,13 @@ public class SwingTask<T> extends SwingWorker<T, Void> {
                 onDone.accept(result);
             }
         } catch (Exception e) {
-            // Unwrap the InvocationTargetException if present
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            log.error("Error in background task", cause);
+            log.error("Error in background task", e);
+            if (showError) {
+                SwingUtils.showException(taskName, "An error occurred during a background task.", e);
+            }
             if (onError != null) {
-                onError.accept((Exception) cause);
+                onError.accept(e);
             }
         }
-    }
-
-    public static <T> void run(Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
-        new SwingTask<>(backgroundTask, onDone, onError).execute();
     }
 }
