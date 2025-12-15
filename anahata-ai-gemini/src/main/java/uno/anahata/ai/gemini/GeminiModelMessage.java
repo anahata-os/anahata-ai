@@ -1,11 +1,18 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini;
 
+import com.google.genai.types.Candidate;
+import com.google.genai.types.Citation;
 import com.google.genai.types.Content;
 import com.google.genai.types.FunctionCall;
 import com.google.genai.types.Part;
+import com.google.genai.types.SafetyRating;
+import com.google.genai.types.HarmCategory;
+import com.google.genai.types.HarmProbability;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +22,7 @@ import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.tool.AbstractToolCall;
+import uno.anahata.ai.model.web.GroundingMetadata;
 
 /**
  * An object-oriented representation of a ModelMessage derived from the Gemini provider.
@@ -25,30 +33,60 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
  */
 @Slf4j
 @Getter
-public class GeminiModelMessage extends AbstractModelMessage<GeminiToolMessage> {
+public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, GeminiToolMessage> {
 
-    /** The original Gemini Content object from which this message was constructed. */
-    private final transient Content geminiContent;
-
+    /** The original, native Candidate object from the Google GenAI API. */
+    private final transient Candidate geminiCandidate;
+    
     /**
      * Constructs a GeminiModelMessage, encapsulating the conversion logic.
      *
      * @param chat          The parent chat session.
      * @param modelId       The ID of the model that generated the content.
-     * @param geminiContent The source Gemini Content object.
+     * @param candidate The source Gemini Candidate object.
+     * @param response The GeminiResponse that returned this message.
      */
-    public GeminiModelMessage(Chat chat, String modelId, Content geminiContent) {
+    public GeminiModelMessage(Chat chat, String modelId, Candidate candidate, GeminiResponse response) {
         super(chat, modelId);
-        this.geminiContent = geminiContent;
+        this.geminiCandidate = candidate;
+        setResponse(response);
+        
+        // Populate new fields from Candidate
+        candidate.groundingMetadata().ifPresent(gm -> {
+            List<String> webSearchQueries = gm.webSearchQueries().orElse(List.of());
+            List<String> supportingTexts = gm.groundingSupports().orElse(List.of()).stream()
+                .filter(gs -> gs.segment().isPresent() && gs.segment().get().text().isPresent())
+                .map(gs -> gs.segment().get().text().get())
+                .collect(Collectors.toList());
+
+            setGroundingMetadata(new GroundingMetadata(
+                webSearchQueries,
+                supportingTexts,
+                null, // sources are not directly mapped here, need to be converted if required
+                gm.toJson()));
+        });
+        candidate.finishMessage().ifPresent(this::setFinishMessage);
+        candidate.safetyRatings().ifPresent(sr -> setSafetyRatings(sr.stream()
+            .map(s -> s.category().map(c -> c.knownEnum().name()).orElse("") + ":" + s.probability().map(p -> p.knownEnum().name()).orElse(""))
+            .collect(Collectors.joining(", "))));
+        setTokenCount(candidate.tokenCount().orElse(0));
+        setRawJson(candidate.toJson());
+        setCitationMetadata(candidate.citationMetadata()
+            .map(cm -> cm.citations().orElse(List.of()).stream()
+                .map(Citation::uri)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.joining(", ")))
+            .orElse(""));
         
         // All construction logic is now encapsulated here. The parent (this) exists
         // before any child parts are created and added. The AbstractPart constructor
         // adds the part to the message, so we just need a terminal operation to
         // trigger the stream.
-        geminiContent.parts().ifPresent(parts -> parts.stream()
+        candidate.content().ifPresent(content -> content.parts().ifPresent(parts -> parts.stream()
             .map(this::toAnahataPart)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList())); // Use a terminal operation that doesn't re-add the parts.
+            .collect(Collectors.toList()))); // Use a terminal operation that doesn't re-add the parts.
     }
 
     /**

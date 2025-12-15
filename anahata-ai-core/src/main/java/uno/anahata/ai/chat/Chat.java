@@ -5,8 +5,10 @@ package uno.anahata.ai.chat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
@@ -64,6 +66,17 @@ public class Chat {
      * the current conversation turn is complete.
      */
     private volatile UserMessage stagedUserMessage;
+
+    /**
+     * A thread-safe flag indicating if the chat session has been shut down.
+     */
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+
+    /**
+     * The last response received from the model. Used for state persistence and
+     * status panel initialization on deserialization.
+     */
+    private Response<? extends AbstractModelMessage> lastResponse;
 
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
@@ -155,6 +168,7 @@ public class Chat {
                          selectedModel.getModelId(), attempt + 1, maxRetries, history.size());
 
                 Response<?> response = selectedModel.generateContent(this, requestConfig, history);
+                this.lastResponse = response; // Store the last response
 
                 if (response.getCandidates().size() == 1) {
                     chooseCandidate(response.getCandidates().get(0));
@@ -246,7 +260,38 @@ public class Chat {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Checks if the chat session has been shut down.
+     *
+     * @return True if the chat is shut down, false otherwise.
+     */
+    public boolean isShutdown() {
+        return shutdown.get();
+    }
+
+    /**
+     * Gets the last response received from the AI model.
+     *
+     * @return An Optional containing the last response, or empty if none exists.
+     */
+    public Optional<Response<? extends AbstractModelMessage>> getLastResponse() {
+        return Optional.ofNullable(lastResponse);
+    }
+    
+    /**
+     * Gets the total token count from the last response, if available.
+     * This is primarily used by the UI for the context usage bar.
+     *
+     * @return The total token count of the last response, or 0 if no response is available.
+     */
+    public int getLastTotalTokenCount() {
+        return getLastResponse()
+                .map(Response::getTotalTokenCount)
+                .orElse(0);
+    }
+
     public void shutdown() {
+        shutdown.set(true);
         log.info("Shutting down Chat for session {}", config.getSessionId());
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();

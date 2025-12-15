@@ -3,13 +3,37 @@
  */
 package uno.anahata.ai.model.web;
 
-import lombok.Data;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 /**
- * A placeholder for future web-grounding and retrieval-augmented generation (RAG) capabilities.
- * @author anahata-gemini-pro-2.5
+ * Metadata about the grounding sources used by the model.
+ *
+ * @author anahata
  */
-@Data
+@Value
+@AllArgsConstructor
 public class GroundingMetadata {
-    // Fields to be added later, e.g., for web search queries, retrieved documents, etc.
+
+    /**
+     * A list of search queries that the model suggests for further exploration.
+     */
+    List<String> webSearchQueries;
+
+    /**
+     * A list of text segments from the sources that directly support the model's response.
+     */
+    List<String> supportingTexts;
+
+    /**
+     * A list of web sources (citations) used for grounding.
+     */
+    List<GroundingSource> sources;
+
+    /**
+     * The raw JSON representation of the native grounding metadata object.
+     */
+    String rawJson;
 }

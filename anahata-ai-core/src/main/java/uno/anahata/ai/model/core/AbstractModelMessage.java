@@ -9,6 +9,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.tool.AbstractToolCall;
+import uno.anahata.ai.model.web.GroundingMetadata;
 
 /**
  * Represents a message originating from the AI model. It extends {@link AbstractMessage},
@@ -18,7 +19,7 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
  */
 @Getter
 @Setter
-public abstract class AbstractModelMessage<T extends AbstractToolMessage> extends AbstractMessage {
+public abstract class AbstractModelMessage<R extends Response, T extends AbstractToolMessage> extends AbstractMessage {
     
     /** The ID of the model that generated this message. */
     private final String modelId;
@@ -26,6 +27,30 @@ public abstract class AbstractModelMessage<T extends AbstractToolMessage> extend
     /** A paired message containing the responses to any tool calls in this message. */
     @Getter(AccessLevel.NONE)
     private T toolMessage;
+    
+    /** The reason why the model stopped generating content for this candidate. */
+    private String finishReason; 
+    
+    /** The message explaining why the model stopped generating content for this candidate. */
+    private String finishMessage;
+    
+    /** The grounding metadata for the response. */
+    private GroundingMetadata groundingMetadata;
+    
+    /** The safety ratings for the response, summarized as a string. */
+    private String safetyRatings;
+    
+    /** The number of tokens for this candidate. */
+    private int tokenCount;
+    
+    /** The raw JSON response from the model. */
+    private String rawJson;
+    
+    /** The citation metadata for the response, summarized as a string. */
+    private String citationMetadata;
+    
+    /** The response that returned this message. */
+    private R response;
     
     public AbstractModelMessage(@NonNull Chat chat, @NonNull String modelId) {
         super(chat);

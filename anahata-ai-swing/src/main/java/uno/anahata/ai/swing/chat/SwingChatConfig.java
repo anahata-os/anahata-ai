@@ -28,6 +28,11 @@ public class SwingChatConfig extends ChatConfig {
      * (e.g., in a collapsed state) to allow the user to inspect and un-prune them.
      */
     private boolean showPrunedParts = true;
+    
+    /**
+     * If true, sound notifications will be played on status changes.
+     */
+    private boolean audioFeedbackEnabled = true; // Added field
 
     public SwingChatConfig(AiConfig aiConfig) {
         super(aiConfig, "standalone");
@@ -40,10 +45,16 @@ public class SwingChatConfig extends ChatConfig {
                 return new Color(0, 123, 255); // BLUE
             case TOOL_PROMPT:
                 return new Color(255, 193, 7); // AMBER
+            case CANDIDATE_CHOICE_PROMPT:
+                return new Color(23, 162, 184); // CYAN
             case TOOL_EXECUTION_IN_PROGRESS:
                 return new Color(128, 0, 128); // PURPLE
             case WAITING_WITH_BACKOFF:
                 return new Color(255, 0, 0); // RED
+            case MAX_RETRIES_REACHED:
+                return new Color(150, 0, 0); // DARK RED
+            case SHUTDOWN:
+                return Color.GRAY; // GRAY
             case IDLE:
                 return new Color(0, 128, 0); // GREEN
             default:

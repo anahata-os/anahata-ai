@@ -20,7 +20,6 @@ import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.RagMessage;
-import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.resource.AbstractResource;
 
 /**
@@ -190,5 +189,23 @@ public class ContextManager {
      */
     public List<AbstractMessage> getHistory() {
         return Collections.unmodifiableList(history);
+    }
+
+    /**
+     * Gets the current total token count of all parts in the context.
+     *
+     * @return The total token count.
+     */
+    public int getTotalTokenCount() {
+        return chat.getLastTotalTokenCount();
+    }
+
+    /**
+     * Gets the maximum number of tokens allowed in the context window.
+     *
+     * @return The token threshold.
+     */
+    public int getTokenThreshold() {
+        return chat.getConfig().getTokenThreshold();
     }
 }

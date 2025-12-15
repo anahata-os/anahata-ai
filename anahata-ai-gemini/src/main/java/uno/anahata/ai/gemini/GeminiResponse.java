@@ -5,19 +5,24 @@ package uno.anahata.ai.gemini;
 
 import com.google.genai.types.Candidate;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.GenerateContentResponsePromptFeedback;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.Response;
+import uno.anahata.ai.model.core.ResponseUsageMetadata;
+import uno.anahata.ai.model.web.GroundingMetadata;
 
 /**
  * A specialized, object-oriented Response class for the Gemini provider.
  * It encapsulates all the logic for converting a native Google GenerateContentResponse
  * into the Anahata domain model, making it a self-contained and reusable component.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class GeminiResponse extends Response<GeminiModelMessage> {
@@ -27,9 +32,9 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
 
     // --- Final fields to hold the converted data ---
     private final List<GeminiModelMessage> candidates;
-    private final String finishReason;
-    private final int promptTokenCount;
-    private final int totalTokenCount;
+    private final ResponseUsageMetadata usageMetadata;
+    private final Optional<String> promptFeedback;
+    private final String rawJson;
 
     /**
      * Constructs a GeminiResponse, performing the full conversion from the native
@@ -40,25 +45,42 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
      * @param genaiResponse The native response object from the API.
      */
     public GeminiResponse(Chat chat, String modelId, GenerateContentResponse genaiResponse) {
-        super(); // Clean super() call to the abstract class constructor.
+        // The superclass is abstract, so no super() call is needed here.
         this.genaiResponse = genaiResponse;
-
-        // --- Conversion Logic ---
+        this.rawJson = genaiResponse.toJson();
+        
+        // --- 1. Convert Candidates ---
         this.candidates = genaiResponse.candidates().get().stream()
-            .map(candidate -> {
-                GeminiModelMessage message = new GeminiModelMessage(chat, modelId, candidate.content().get());
-                message.setTokenCount(candidate.tokenCount().orElse(0));
-                return message;
-            })
+            .map(candidate -> new GeminiModelMessage(chat, modelId, candidate, this))
             .collect(Collectors.toList());
 
-        this.promptTokenCount = genaiResponse.usageMetadata().flatMap(GenerateContentResponseUsageMetadata::promptTokenCount).orElse(0);
-        this.totalTokenCount = genaiResponse.usageMetadata().flatMap(GenerateContentResponseUsageMetadata::totalTokenCount).orElse(0);
+        // --- 2. Convert Usage Metadata ---
+        this.usageMetadata = genaiResponse.usageMetadata()
+            .map(this::convertUsageMetadata)
+            .orElse(ResponseUsageMetadata.builder().build()); // Default empty metadata
 
-        this.finishReason = genaiResponse.candidates().get().stream().findFirst()
-            .flatMap(Candidate::finishReason)
-            .map(Object::toString)
-            .orElse("UNKNOWN");
+        // --- 3. Convert Prompt Feedback ---
+        this.promptFeedback = genaiResponse.promptFeedback()
+            .flatMap(GenerateContentResponsePromptFeedback::blockReasonMessage);
+        
+    }
+
+    /**
+     * Converts the native GenAI usage metadata to the V2 core model.
+     *
+     * @param genaiUsage The native usage metadata.
+     * @return The V2 {@code ResponseUsageMetadata}.
+     */
+    private ResponseUsageMetadata convertUsageMetadata(GenerateContentResponseUsageMetadata genaiUsage) {
+        return ResponseUsageMetadata.builder()
+            .promptTokenCount(genaiUsage.promptTokenCount().orElse(0))
+            .candidatesTokenCount(genaiUsage.candidatesTokenCount().orElse(0))
+            .cachedContentTokenCount(genaiUsage.cachedContentTokenCount().orElse(0))
+            .thoughtsTokenCount(genaiUsage.thoughtsTokenCount().orElse(0))
+            .toolUsePromptTokenCount(genaiUsage.toolUsePromptTokenCount().orElse(0))
+            .totalTokenCount(genaiUsage.totalTokenCount().orElse(0))
+            .rawJson(genaiUsage.toJson()) // Added rawJson population
+            .build();
     }
 
     // --- Implementation of Abstract Methods ---
@@ -69,17 +91,22 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
     }
 
     @Override
-    public String getFinishReason() {
-        return finishReason;
+    public ResponseUsageMetadata getUsageMetadata() {
+        return usageMetadata;
     }
 
     @Override
-    public int getPromptTokenCount() {
-        return promptTokenCount;
+    public Optional<String> getPromptFeedback() {
+        return promptFeedback;
     }
 
     @Override
     public int getTotalTokenCount() {
-        return totalTokenCount;
+        return usageMetadata.getTotalTokenCount(); // Delegate to usageMetadata
+    }
+
+    @Override
+    public String getRawJson() {
+        return rawJson;
     }
 }

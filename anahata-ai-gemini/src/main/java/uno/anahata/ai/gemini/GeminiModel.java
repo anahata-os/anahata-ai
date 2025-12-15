@@ -154,6 +154,7 @@ public class GeminiModel extends AbstractModel {
                 googleHistory,
                 RequestConfigAdapter.toGoogle(config)
         );
+        log.info("Got respnse from Gemini model: {}", response.toJson());
 
         // 3. Convert the Gemini response to the Anahata response using the new OO response class.
         return new GeminiResponse(chat, getModelId(), response);

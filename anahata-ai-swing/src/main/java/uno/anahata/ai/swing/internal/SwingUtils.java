@@ -3,6 +3,7 @@
  */
 package uno.anahata.ai.swing.internal;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
@@ -13,7 +14,7 @@ import lombok.experimental.UtilityClass;
  * A collection of general-purpose Swing utility methods, primarily for image
  * manipulation and UI component creation.
  *
- * @author pablo
+ * @author anahata
  */
 @UtilityClass
 public class SwingUtils {
@@ -47,5 +48,15 @@ public class SwingUtils {
         g.dispose();
 
         return resized;
+    }
+
+    /**
+     * Converts a Java Color object to its HTML hexadecimal string representation.
+     *
+     * @param color The Color object to convert.
+     * @return The HTML hexadecimal string (e.g., "#RRGGBB").
+     */
+    public static String toHtmlColor(Color color) {
+        return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
 }

@@ -4,7 +4,7 @@
 package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -18,7 +18,6 @@ import javax.swing.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTextArea;
-import org.jdesktop.swingx.JXTitledPanel;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.swing.icons.IconUtils;
@@ -39,10 +38,10 @@ import uno.anahata.ai.swing.internal.UICapture;
  */
 @Slf4j
 @Getter
-public class InputPanel extends JXTitledPanel {
+public class InputPanel extends JPanel { // Changed from JXTitledPanel
 
     private final Chat chat;
-    private final ChatPanel chatPanel; // New field for ChatPanel
+    private final ChatPanel chatPanel;
 
     // UI Components
     private JXTextArea inputTextArea;
@@ -51,8 +50,9 @@ public class InputPanel extends JXTitledPanel {
     private JButton attachButton;
     private JButton screenshotButton;
     private JButton captureFramesButton;
-    private InputMessageRenderer inputMessageRenderer; // Renamed Field
-    private JScrollPane previewScrollPane; // New field to hold the scroll pane reference
+    private InputMessagePanel inputMessageRenderer;
+    private JScrollPane previewScrollPane;
+    private JSplitPane splitPane; // Added splitPane field
 
     /**
      * The "live" message being composed by the user. This is the single source
@@ -60,24 +60,21 @@ public class InputPanel extends JXTitledPanel {
      */
     private InputUserMessage currentMessage;
 
-    public InputPanel(ChatPanel chatPanel) { // Changed constructor argument
-        super("User Input");
-        setLayout(new BorderLayout(5, 5));
+    public InputPanel(ChatPanel chatPanel) {
+        super(new BorderLayout(5, 5)); // Use JPanel constructor
         this.chatPanel = chatPanel;
-        this.chat = chatPanel.getChat(); // Get Chat from ChatPanel
+        this.chat = chatPanel.getChat();
         initComponents();
-        // Initial message reset is now handled in initComponents
     }
 
     private void initComponents() {
-        // setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Removed: JXTitledPanel manages its own border
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Added border back
 
         inputTextArea = new JXTextArea("Type your message here (Ctrl+Enter to send)");
         inputTextArea.setLineWrap(true);
         inputTextArea.setWrapStyleWord(true);
 
         // --- REAL-TIME MODEL UPDATE ---
-        // Listen for changes in the text area and update the live message model instantly.
         inputTextArea.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::updateMessageText));
 
         // Ctrl+Enter to send
@@ -91,20 +88,21 @@ public class InputPanel extends JXTitledPanel {
         });
 
         JScrollPane inputScrollPane = new JScrollPane(inputTextArea);
+        // Set preferred height for the input area (approx. 4 lines)
+        inputScrollPane.setPreferredSize(new Dimension(0, 80));
         
-        // --- INITIAL PREVIEW PANEL INTEGRATION ---
-        // Create initial message and renderer
+        // --- PREVIEW PANEL INTEGRATION ---
         this.currentMessage = new InputUserMessage(chat);
-        this.inputMessageRenderer = new InputMessageRenderer(chatPanel, currentMessage);
+        this.inputMessageRenderer = new InputMessagePanel(chatPanel, currentMessage);
         
-        // Store the scroll pane reference
         previewScrollPane = new JScrollPane(inputMessageRenderer);
         
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputScrollPane, previewScrollPane);
-        splitPane.setResizeWeight(0.5); // Equal split initially
-        splitPane.setDividerLocation(0.5);
+        // --- HORIZONTAL SPLIT PANE ---
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputScrollPane, previewScrollPane);
+        splitPane.setResizeWeight(0.5); // Give equal weight to both sides
+        splitPane.setDividerLocation(0.5); // Initial split at 50% width
         
-        add(splitPane, BorderLayout.CENTER); // Add the split pane instead of the input scroll pane
+        add(splitPane, BorderLayout.CENTER);
 
         // Panel for buttons on the south side
         JPanel southButtonPanel = new JPanel(new BorderLayout(5, 0));
@@ -298,7 +296,7 @@ public class InputPanel extends JXTitledPanel {
      */
     private void replaceRenderer(InputUserMessage newMessage) {
         // 1. Create the new renderer
-        InputMessageRenderer newRenderer = new InputMessageRenderer(chatPanel, newMessage);
+        InputMessagePanel newRenderer = new InputMessagePanel(chatPanel, newMessage);
         
         // 2. Replace the viewport view of the existing scroll pane
         previewScrollPane.setViewportView(newRenderer);

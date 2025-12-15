@@ -1,14 +1,17 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+/*
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ */
 package uno.anahata.ai.model.core;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A standardized, model-agnostic response received from an AI model provider.
  * This abstract class defines the contract for a response, allowing for
  * provider-specific implementations while maintaining a consistent API.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  * @param <T> The specific type of AbstractModelMessage this response contains.
  */
 public abstract class Response<T extends AbstractModelMessage> {
@@ -20,20 +23,26 @@ public abstract class Response<T extends AbstractModelMessage> {
     public abstract List<T> getCandidates();
 
     /**
-     * Gets the reason why the model stopped generating content.
-     * @return The finish reason string, which may be null.
+     * Gets the usage metadata for the response.
+     * @return The usage metadata.
      */
-    public abstract String getFinishReason();
+    public abstract ResponseUsageMetadata getUsageMetadata();
 
     /**
-     * Gets the number of tokens in the prompt.
-     * @return The prompt token count.
+     * Gets the prompt feedback message, which explains why the prompt was blocked, if applicable.
+     * @return An Optional containing the block reason message, or empty if not blocked.
      */
-    public abstract int getPromptTokenCount();
+    public abstract Optional<String> getPromptFeedback();
 
     /**
      * Gets the total number of tokens for the entire interaction (prompt + all candidates).
      * @return The total token count.
      */
     public abstract int getTotalTokenCount();
+    
+    /**
+     * Gets the total number of tokens for the entire interaction (prompt + all candidates).
+     * @return The total token count.
+     */
+    public abstract String getRawJson();
 }

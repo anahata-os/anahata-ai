@@ -77,6 +77,9 @@ public class ChatConfig {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Context Management">
+    /** The maximum number of tokens allowed in the context window. */
+    private int tokenThreshold = 250000; // Moved from ContextManager
+    
     /** The default number of user turns a TextPart should be kept in context. */
     private int defaultTextPartTurnsToKeep = 108;
     
@@ -103,6 +106,15 @@ public class ChatConfig {
             requestConfig = new RequestConfig(chat);
         }
         return requestConfig;
+    }
+    
+    /**
+     * Gets the maximum number of tokens allowed in the context window.
+     *
+     * @return The token threshold.
+     */
+    public int getTokenThreshold() {
+        return tokenThreshold;
     }
     
     /**

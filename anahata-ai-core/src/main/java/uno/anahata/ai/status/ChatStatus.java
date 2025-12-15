@@ -4,43 +4,43 @@
 package uno.anahata.ai.status;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Defines the possible operational states of the Chat, primarily for UI feedback.
  * This is a direct port of the proven V1 enum.
- * 
- * @author pablo
+ *
+ * @author anahata
  */
+@RequiredArgsConstructor
 @Getter
 public enum ChatStatus {
+    /** The model has finished processing and is waiting for the user's next input. */
+    IDLE("Idle, Waiting for User", "Waiting for user input."),
+
     /** A normal API call is in progress (e.g., waiting for a model response). */
     API_CALL_IN_PROGRESS("API Call in Progress...", "Waiting for a response from the model."),
-    
+
     /** The assistant is waiting for the user to approve/deny tool calls. */
     TOOL_PROMPT("Tool Prompt", "Waiting for user to approve/deny tool calls."),
-    
+
     /** The model has returned multiple candidates and is waiting for the user to choose one. */
     CANDIDATE_CHOICE_PROMPT("Candidate Choice", "Waiting for user to select a response candidate."),
-    
+
     /** Local tool (function) execution is in progress. */
     TOOL_EXECUTION_IN_PROGRESS("Tool Execution...", "Executing local Java tools (functions)."),
-    
+
     /** An API error occurred, and the system is in retry mode with exponential backoff. */
     WAITING_WITH_BACKOFF("Waiting with Backoff...", "An API error occurred. Retrying with exponential backoff."),
-    
+
     /** The assistant has hit the maximum number of retries and has stopped. */
     MAX_RETRIES_REACHED("Max Retries Reached", "The assistant has stopped after hitting the maximum number of retries."),
-    
-    /** The model has finished processing and is waiting for the user's next input. */
-    IDLE("Idle", "Waiting for user input.");
+
+    /** The chat session has been shut down. */
+    SHUTDOWN("Shutdown", "The chat session has been shut down.");
 
     private final String displayName;
     private final String description;
-
-    ChatStatus(String displayName, String description) {
-        this.displayName = displayName;
-        this.description = description;
-    }
 
     @Override
     public String toString() {

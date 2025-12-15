@@ -3,132 +3,80 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
+import java.awt.Container;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 import lombok.Getter;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.ai.internal.TextUtils;
 import uno.anahata.ai.model.core.AbstractPart;
-import uno.anahata.ai.model.core.BlobPart;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
-import uno.anahata.ai.swing.components.ScrollablePanel;
 import uno.anahata.ai.swing.icons.IconUtils;
 
 /**
  * The abstract base class for all V2 Part Renderers.
  * <p>
- * This class is now a composite {@link ScrollablePanel} that manages the layout
- * of the content component (provided by subclasses) and the control panel
- * (implemented here). It also handles the conditional display of content based
- * on the part's pruned state.
+ * This class is now a factory that produces a list of JComponents for a given
+ * {@link AbstractPart}. It no longer extends {@link JPanel} or {@link ScrollablePanel}.
+ * The control panel (header) is created here, and the content component is
+ * provided by subclasses.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
-public abstract class AbstractPartRenderer extends ScrollablePanel {
+public abstract class AbstractPartRenderer<T extends AbstractPart> {
 
+    /**
+     * The chat panel instance.
+     */
     protected final ChatPanel chatPanel;
-    protected final AbstractPart part; // The part this renderer instance is tied to
+    /**
+     * The part this renderer instance is tied to.
+     */
+    protected final T part;
+    /**
+     * The chat configuration.
+     */
     protected final SwingChatConfig chatConfig;
-    
-    // The component provided by the subclass (e.g., JEditorPane, JLabel)
-    protected JComponent contentComponent; 
-    
-    // Control Panel Components
-    private final JPanel controlPanel;
-    private final JLabel infoLabel;
-    private final JButton pruneButton;
-    private final JButton removeButton;
 
-    public AbstractPartRenderer(ChatPanel chatPanel, AbstractPart part) {
-        super(SwingConstants.VERTICAL); // Vertical scrolling by default
-        setLayout(new BorderLayout());
+    private final JPanel controlPanel; // Created once
+    private final JLabel infoLabel; // Part of controlPanel, created once
+    private final JButton pruneButton; // Part of controlPanel, created once
+    private final JButton removeButton; // Part of controlPanel, created once
+
+    private final List<JComponent> renderedContentComponents = new ArrayList<>(); // Stores content components for visibility management
+
+    /**
+     * Constructs a new AbstractPartRenderer.
+     *
+     * @param chatPanel The chat panel instance.
+     * @param part The part to be rendered.
+     */
+    public AbstractPartRenderer(ChatPanel chatPanel, T part) {
         this.chatPanel = chatPanel;
         this.part = part;
         this.chatConfig = chatPanel.getChatConfig();
-        
-        // Initialize control panel components
+
+        // Initialize control panel and its components once
+        this.controlPanel = new JPanel(new MigLayout("insets 0, fillx, gap 5", "[grow]push[][]", "[]"));
+        this.controlPanel.setOpaque(false);
+        this.controlPanel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
+
         this.infoLabel = new JLabel();
+        this.infoLabel.setForeground(Color.GRAY);
+        this.controlPanel.add(this.infoLabel, "growx");
+
         this.pruneButton = new JButton();
-        this.removeButton = new JButton();
-        
-        // Initialize the control panel
-        this.controlPanel = createControlPanel();
-        
-        // Add the control panel to the top
-        add(controlPanel, BorderLayout.NORTH);
-        
-        // Initial render
-        update();
-    }
-
-    /**
-     * Renders or updates the internal content component based on the current state of
-     * the {@link #part} field. This method is called by the constructor for
-     * initial rendering and by the public {@code update()} method for subsequent
-     * changes.
-     * <p>
-     * Subclasses must set the {@code contentComponent} field in this method.
-     */
-    protected abstract void updateContent();
-
-    /**
-     * Triggers a re-render of the component based on the current state of the
-     * {@link #part} field. This is the method the parent {@code MessageRenderer}
-     * will call when the part's content has changed.
-     */
-    public final void update() {
-        // 1. Update the content component (implemented by subclass)
-        updateContent();
-        
-        // 2. Update the control panel text and buttons
-        updateControlPanel();
-        
-        // 3. Handle conditional visibility based on pruned state and config
-        boolean isEffectivelyPruned = part.isEffectivelyPruned();
-        boolean shouldShowContent = !isEffectivelyPruned || chatConfig.isShowPrunedParts();
-        
-        Component currentCenterComponent = ((BorderLayout) getLayout()).getLayoutComponent(BorderLayout.CENTER);
-        
-        // Only remove the center component if the visibility state is changing
-        // or if the content component itself is changing.
-        if (currentCenterComponent != null && (!shouldShowContent || currentCenterComponent != contentComponent)) {
-            remove(currentCenterComponent);
-            currentCenterComponent = null;
-        }
-        
-        if (shouldShowContent && contentComponent != null && currentCenterComponent == null) {
-            // Add the content component to the center if it should be shown and is not already there
-            add(contentComponent, BorderLayout.CENTER);
-        }
-        
-        // Revalidate and repaint the whole renderer
-        revalidate();
-        repaint();
-    }
-    
-    private JPanel createControlPanel() {
-        // Layout: [Part Type/Summary] [PUSH] [Prune Button] [Remove Button]
-        JPanel panel = new JPanel(new MigLayout("insets 0, fillx, gap 5", "[grow]push[][]", "[]"));
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
-        
-        // 1. Part Info Label (Left-aligned)
-        infoLabel.setForeground(Color.GRAY);
-        panel.add(infoLabel, "growx");
-        
-        // 2. Prune Button (3-state)
-        pruneButton.setAction(new AbstractAction() {
+        this.pruneButton.setAction(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Logic: null -> true (prune) -> false (pin) -> null (auto)
@@ -140,38 +88,77 @@ public abstract class AbstractPartRenderer extends ScrollablePanel {
                 } else {
                     part.setPruned(null); // Auto
                 }
-                // Trigger a full UI update (will be handled by the parent MessageRenderer later)
-                update(); 
+                // Update the control panel and content components visibility
+                updateControlPanel();
+                updateContentComponentsVisibility();
+                controlPanel.revalidate();
+                controlPanel.repaint();
             }
         });
-        pruneButton.setToolTipText("Toggle Pruning State (Auto/Pruned/Pinned)");
-        panel.add(pruneButton, "w 24!, h 24!");
-        
-        // 3. Remove Button (Conditional)
-        if (part instanceof BlobPart) {
-            removeButton.setAction(new AbstractAction(null, IconUtils.getIcon("delete.png")) {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // This is the public method we made in AbstractPart.java
-                    part.remove(); 
-                    // The parent InputMessageRenderer will detect the removal and re-render
-                }
-            });
-            removeButton.setToolTipText("Remove Attachment");
-            panel.add(removeButton, "w 24!, h 24!");
-        }
-        
-        return panel;
+        this.pruneButton.setToolTipText("Toggle Pruning State (Auto/Pruned/Pinned)");
+        this.controlPanel.add(this.pruneButton, "w 24!, h 24!");
+
+        this.removeButton = new JButton();
+        this.removeButton.setAction(new AbstractAction(null, IconUtils.getIcon("delete.png")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                part.remove();
+                // Remove this renderer's components from their parent
+                removeFromParent();
+            }
+        });
+        this.removeButton.setToolTipText("Remove Part");
+        this.controlPanel.add(this.removeButton, "w 24!, h 24!");
     }
-    
+
+    /**
+     * Renders the {@link AbstractPart} into a list of JComponents, including
+     * the control panel (header) and the content component(s) provided by
+     * subclasses.
+     *
+     * @return A list of JComponents representing the rendered part.
+     */
+    public final List<JComponent> render() {
+        List<JComponent> components = new ArrayList<>();
+
+        // 1. Update the state of the existing control panel components
+        updateControlPanel();
+        components.add(this.controlPanel);
+
+        // 2. Create the content component(s) (implemented by subclass)
+        // Clear previous content components and add new ones
+        renderedContentComponents.clear();
+        renderedContentComponents.addAll(renderContentComponents());
+
+        if (!renderedContentComponents.isEmpty()) {
+            // 3. Handle conditional visibility based on pruned state and config
+            updateContentComponentsVisibility();
+            components.addAll(renderedContentComponents);
+        }
+
+        return components;
+    }
+
+    /**
+     * Subclasses must implement this method to create the specific content
+     * component(s) for their part type.
+     *
+     * @return A list of JComponents representing the content of the part, or an empty list if no content.
+     */
+    protected abstract List<JComponent> renderContentComponents();
+
+    /**
+     * Updates the state of the control panel components (info label, prune button).
+     * This method is called on every render to reflect the current state of the part.
+     */
     private void updateControlPanel() {
         // Update Info Label
         String partType = part.getClass().getSimpleName();
         String rawText = part.asText();
         String summary = TextUtils.formatValue(rawText);
-        
+
         infoLabel.setText("<html><b>" + partType + "</b> <span style='color: #AAAAAA;'>" + summary + "</span></html>");
-        
+
         // Update Prune Button Icon and Tooltip
         Boolean prunedState = part.getPruned();
         if (Boolean.TRUE.equals(prunedState)) {
@@ -186,6 +173,36 @@ public abstract class AbstractPartRenderer extends ScrollablePanel {
             // Auto-Prune (Default)
             pruneButton.setIcon(IconUtils.getIcon("auto_prune.png")); // Assuming an 'auto_prune.png' icon exists
             pruneButton.setToolTipText("Status: Auto-Prune (Click to Prune)");
+        }
+    }
+
+    /**
+     * Updates the visibility of the content components based on the part's pruned state
+     * and the chat configuration.
+     */
+    private void updateContentComponentsVisibility() {
+        boolean isEffectivelyPruned = part.isEffectivelyPruned();
+        boolean shouldShowContent = !isEffectivelyPruned || chatConfig.isShowPrunedParts();
+
+        for (JComponent component : renderedContentComponents) {
+            component.setVisible(shouldShowContent);
+        }
+    }
+
+    /**
+     * Removes all components produced by this renderer (the control panel and content components)
+     * from their current parent container.
+     */
+    public void removeFromParent() {
+        // The control panel is always the first component and should have a parent if rendered.
+        if (controlPanel.getParent() != null) {
+            Container parent = controlPanel.getParent();
+            parent.remove(controlPanel);
+            for (JComponent contentComponent : renderedContentComponents) {
+                parent.remove(contentComponent);
+            }
+            parent.revalidate();
+            parent.repaint();
         }
     }
 }

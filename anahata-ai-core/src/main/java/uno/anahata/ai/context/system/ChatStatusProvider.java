@@ -6,8 +6,6 @@ package uno.anahata.ai.context.system;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.model.core.AbstractPart;
-import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.status.ChatStatus;
 
 /**
@@ -24,11 +22,8 @@ public class ChatStatusProvider extends AbstractSystemInstructionsProvider {
 
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        ChatStatus status = chat.getStatusManager().getLastEvent() != null
-            ? chat.getStatusManager().getLastEvent().getStatus()
-            : ChatStatus.IDLE;
-            
-        String statusString = "- Chat Status: " + status.getDisplayName() + "\n";
+        ChatStatus status = chat.getStatusManager().getCurrentStatus();
+        String statusString = String.format("Current Chat Status: %s (%s)", status.getDisplayName(), status.getDescription());
         return Collections.singletonList(statusString);
     }
 }

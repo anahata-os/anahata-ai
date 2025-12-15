@@ -15,7 +15,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import lombok.Getter;
@@ -34,7 +33,7 @@ import uno.anahata.ai.swing.chat.render.TextPartRenderer;
  * @author pablo
  */
 @Getter
-public class InputMessageRenderer extends JPanel {
+public class InputMessagePanel extends JPanel {
 
     private final ChatPanel chatPanel;
     private final InputUserMessage message; // The mutable message instance
@@ -46,7 +45,7 @@ public class InputMessageRenderer extends JPanel {
     
     // State tracking for diffing (now only for blobs, text is self-managed)
 
-    public InputMessageRenderer(ChatPanel chatPanel, InputUserMessage message) {
+    public InputMessagePanel(ChatPanel chatPanel, InputUserMessage message) {
         super(new BorderLayout());
         this.chatPanel = chatPanel;
         this.message = message;
@@ -71,10 +70,7 @@ public class InputMessageRenderer extends JPanel {
      * Updates the preview panel with the content of the live message.
      */
     public void render() {
-        // 1. Update Text Part (self-managed diff)
-        textRenderer.update();
-        
-        // 2. Diff and Update Blob Parts
+        // 1. Diff and Update Blob Parts
         List<BlobPart> currentBlobs = message.getAttachments();
         
         // Identify removed blobs
@@ -90,7 +86,7 @@ public class InputMessageRenderer extends JPanel {
             .filter(blob -> !blobRenderers.containsKey(blob))
             .forEach(blob -> blobRenderers.put(blob, new BlobPartRenderer(chatPanel, blob)));
         
-        // 3. Rebuild Content Panel (Order matters)
+        // 2. Rebuild Content Panel (Order matters)
         contentPanel.removeAll();
         
         GridBagConstraints gbc = new GridBagConstraints();
@@ -105,7 +101,9 @@ public class InputMessageRenderer extends JPanel {
         // Add Text Part (always first)
         if (currentText != null && !currentText.trim().isEmpty()) {
             gbc.insets = new Insets(0, 0, 0, 0);
-            contentPanel.add(textRenderer, gbc); // TextRenderer is now a ScrollablePanel
+            for (JComponent component : textRenderer.render()) {
+                contentPanel.add(component, gbc);
+            }
             firstPart = false;
         }
         
@@ -113,9 +111,6 @@ public class InputMessageRenderer extends JPanel {
         for (BlobPart blobPart : currentBlobs) {
             BlobPartRenderer renderer = blobRenderers.get(blobPart);
             if (renderer != null) {
-                // Update the renderer's content and controls
-                renderer.update(); 
-                
                 if (!firstPart) {
                     // Add a separator before the blob part if it's not the first component
                     gbc.insets = new Insets(10, 0, 10, 0);
@@ -124,12 +119,14 @@ public class InputMessageRenderer extends JPanel {
                 }
                 
                 gbc.insets = new Insets(0, 0, 0, 0);
-                contentPanel.add(renderer, gbc); // BlobRenderer is now a ScrollablePanel
+                for (JComponent component : renderer.render()) {
+                    contentPanel.add(component, gbc);
+                }
                 firstPart = false;
             }
         }
         
-        // 4. Add vertical glue to push content to the top
+        // 3. Add vertical glue to push content to the top
         gbc.weighty = 1;
         contentPanel.add(Box.createVerticalGlue(), gbc);
         

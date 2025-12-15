@@ -4,19 +4,45 @@
 package uno.anahata.ai.status;
 
 import java.time.Instant;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 /**
  * A record of a single API error, including context for retries.
- * @author pablo
+ *
+ * @author anahata
  */
-@RequiredArgsConstructor
-@Getter
+@Value
+@SuperBuilder
 public class ApiErrorRecord {
-    private final String modelId;
-    private final Instant timestamp;
-    private final int retryAttempt;
-    private final long backoffAmountMs;
-    private final Throwable exception;
+
+    /**
+     * The ID of the model that was being called.
+     */
+    String modelId;
+
+    /**
+     * The timestamp when the error occurred.
+     */
+    Instant timestamp;
+
+    /**
+     * The attempt number when the error occurred (0-based).
+     */
+    int retryAttempt;
+
+    /**
+     * The backoff amount in milliseconds before the next retry.
+     */
+    long backoffAmount;
+
+    /**
+     * The exception that was thrown.
+     */
+    Throwable exception;
+
+    /**
+     * The API key used when the error occurred (abbreviated).
+     */
+    String apiKey;
 }
