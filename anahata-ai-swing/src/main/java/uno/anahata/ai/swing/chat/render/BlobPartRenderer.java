@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.event.ItemEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects; // Added import
 import javax.imageio.ImageIO;
+import javax.sound.sampled.Clip;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -23,10 +25,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 import uno.anahata.ai.model.core.BlobPart;
 import uno.anahata.ai.internal.TextUtils;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.internal.SwingUtils;
+import uno.anahata.ai.swing.media.util.AudioPlayer;
 
 /**
  * Renders a {@link uno.anahata.ai.model.core.BlobPart} into a JComponent,
@@ -44,6 +49,7 @@ public class BlobPartRenderer extends AbstractPartRenderer<BlobPart> {
 
     private byte[] lastRenderedData; // To track changes in blob data
     private String lastRenderedMimeType; // To track changes in mime type
+    private Clip currentClip; // To hold the currently playing clip
 
     /**
      * Constructs a new BlobPartRenderer.
@@ -101,9 +107,34 @@ public class BlobPartRenderer extends AbstractPartRenderer<BlobPart> {
                 mainContentLabel.setText("Error: Blob data is empty.");
                 mainContentLabel.setIcon(null);
             } else if (currentMimeType.startsWith("audio/")) {
-                // TODO: Implement V2 AudioTool integration
-                mainContentLabel.setText("Audio Part: " + currentMimeType);
-                mainContentLabel.setIcon(null);
+                JToggleButton playButton = new JToggleButton("▶ Play Audio");
+                playButton.addItemListener(e -> {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
+                        // Start playing
+                        try {
+                            currentClip = AudioPlayer.playToggleable(currentData, isPlaying -> {
+                                SwingUtilities.invokeLater(() -> {
+                                    if (!isPlaying) {
+                                        playButton.setSelected(false); // Deselect button when playback ends
+                                        playButton.setText("▶ Play Audio");
+                                    }
+                                });
+                            });
+                            playButton.setText("■ Stop Audio");
+                        } catch (Exception ex) {
+                            SwingUtils.showException("Play Audio", "Failed to play audio", ex);
+                            playButton.setSelected(false);
+                            playButton.setText("▶ Play Audio");
+                        }
+                    } else {
+                        // Stop playing
+                        AudioPlayer.stop(currentClip);
+                        playButton.setText("▶ Play Audio");
+                    }
+                });
+                mainContentLabel.setText(null); // Clear text if button is present
+                mainContentLabel.setIcon(null); // Clear icon if button is present
+                contentPanel.add(playButton, BorderLayout.NORTH); // Add button to the top
             } else if (currentMimeType.startsWith("image/")) {
                 try {
                     BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(currentData));
