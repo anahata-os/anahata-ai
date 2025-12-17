@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.core.RequestConfig;
 
 /**
@@ -25,6 +26,7 @@ import uno.anahata.ai.model.core.RequestConfig;
  * @author anahata-gemini-pro-2.5
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Slf4j
 public final class RequestConfigAdapter {
 
     /**
@@ -67,6 +69,7 @@ public final class RequestConfigAdapter {
                 builder.toolConfig(tc);
             }
         } else {
+            log.info("Enabled Local tools: " + anahataConfig.getLocalTools() + ", adding google search");
             Tool googleTools = Tool.builder().googleSearch(GoogleSearch.builder().build()).build();
             builder.tools(googleTools);
         }

@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface AIToolParam {
+public @interface AiToolParam {
     /**
      * A clear and concise description of the parameter's purpose.
      * @return The description of this parameter

@@ -16,6 +16,9 @@ import uno.anahata.ai.model.resource.AbstractResource;
  */
 public class ResourceManager {
 
+    /**
+     * A map of all tracked resources by resource id.
+     */
     private final Map<String, AbstractResource> resources = Collections.synchronizedMap(new LinkedHashMap<>());
 
     /**
@@ -24,6 +27,21 @@ public class ResourceManager {
      */
     public void register(@NonNull AbstractResource resource) {
         resources.put(resource.getId(), resource);
+    }
+    
+    /**
+     * Gets a resource for a given type.
+     * 
+     * @param <T> the type of the resource
+     * @param id thre resource id
+     * @return the resource 
+     * @throws IllegalArgumentException - If no resource for that id is registered.
+     */    
+    public <T extends AbstractResource> T getResource(String id) throws IllegalArgumentException{
+        if (!resources.containsKey(id)) {
+            throw new IllegalArgumentException("Resource not registered: " + id);
+        }
+        return (T) resources.get(id);
     }
 
     /**

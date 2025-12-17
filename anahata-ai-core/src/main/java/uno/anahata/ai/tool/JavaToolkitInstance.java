@@ -5,8 +5,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.internal.TikaUtils;
+import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.tool.java.JavaMethodTool;
 import uno.anahata.ai.model.tool.java.JavaMethodToolCall;
 import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
@@ -23,7 +26,7 @@ import uno.anahata.ai.resource.ResourceManager;
  *
  * @author anahata-gemini-pro-2.5
  */
-public abstract class AbstractJavaTool {
+public abstract class JavaToolkitInstance {
 
     private static final ThreadLocal<JavaMethodToolResponse> context = new ThreadLocal<>();
 
@@ -106,6 +109,14 @@ public abstract class AbstractJavaTool {
     protected void log(String message) {
         getResponse().addLog(message);
     }
+    
+    /**
+     * Adds a log message to the current tool's response.
+     * @param message The log message.
+     */
+    protected void error(String message) {
+        getResponse().addError(message);
+    }
 
     /**
      * Attaches a binary blob to the current tool's response.
@@ -141,5 +152,26 @@ public abstract class AbstractJavaTool {
             throw new IOException("Failed to detect MIME type for " + path, e);
         }
         addAttachment(data, mimeType);
+    }
+    
+    /**
+     * Overridable method to provide additional context in the system instructions
+     * 
+     * @param chat the chat for which the system instruction parts are being provided
+     * @return the system instruction parts
+     * @throws Exception 
+     */
+    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
+        return Collections.EMPTY_LIST;
+    }
+    
+    /**
+     * Overridable method to add additional context to the rag message.
+     * 
+     * @param ragMessage the rag message
+     * @throws Exception 
+     */
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        
     }
 }

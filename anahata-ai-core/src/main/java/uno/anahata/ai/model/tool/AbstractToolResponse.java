@@ -85,6 +85,18 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
     }
     
     /**
+     * Adds a log message to this response, which can be displayed to the user.
+     * @param message The log message.
+     */
+    public void addError(String error) {
+        if (this.error == null) {
+            this.error = error;
+        } else {
+            this.error = "\n" + error;
+        }
+    }
+    
+    /**
      * Attaches a binary blob to this response.
      * @param data The binary data.
      * @param mimeType The MIME type of the data.

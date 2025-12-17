@@ -13,9 +13,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.context.system.AbstractSystemInstructionsProvider;
-import uno.anahata.ai.context.system.ChatStatusProvider;
-import uno.anahata.ai.context.system.ContextSummaryProvider;
+import uno.anahata.ai.context.system.AbstractContextProvider;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
@@ -38,7 +36,7 @@ public class ContextManager {
     private final List<AbstractMessage> history = Collections.synchronizedList(new ArrayList<>());
     private final AtomicLong messageIdCounter = new AtomicLong(0);
     private final AtomicLong partIdCounter = new AtomicLong(0);
-    private final List<AbstractSystemInstructionsProvider> providers = new ArrayList<>();
+    private final List<ContextProvider> providers = new ArrayList<>();
 
     /**
      * The maximum number of tokens for the context window.
@@ -52,8 +50,8 @@ public class ContextManager {
 
     public void init() {
         // Register default providers
-        registerProvider(new ContextSummaryProvider(chat));
-        registerProvider(new ChatStatusProvider(chat));
+        //registerProvider(chat.getToolManager());
+        //registerProvider(new ChatStatusProvider());
     }
     
     /**
@@ -66,7 +64,7 @@ public class ContextManager {
         log.info("ContextManager cleared for session {}", chat.getConfig().getSessionId());
     }
 
-    public void registerProvider(AbstractSystemInstructionsProvider provider) {
+    public void registerProvider(AbstractContextProvider provider) {
         providers.add(provider);
         log.info("Registered context provider: {}", provider.getName());
     }
@@ -81,16 +79,17 @@ public class ContextManager {
         List<String> allSystemInstructions = new ArrayList<>();
 
         // 1. Process providers
-        for (AbstractSystemInstructionsProvider provider : providers) {
+        for (ContextProvider provider : providers) {
             if (provider.isEnabled()) {
                 try {
-                    allSystemInstructions.addAll(provider.getSystemInstructions());
+                    allSystemInstructions.addAll(provider.getSystemInstructions(chat));
                 } catch (Exception e) {
                     log.error("Error executing system instruction provider: {}", provider.getName(), e);
                 }
             }
         }
-
+        
+        
         return allSystemInstructions;
     }
 

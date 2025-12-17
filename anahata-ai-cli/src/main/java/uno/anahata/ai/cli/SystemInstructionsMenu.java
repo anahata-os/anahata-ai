@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.context.system.AbstractSystemInstructionsProvider;
+import uno.anahata.ai.context.ContextProvider;
+import uno.anahata.ai.context.system.AbstractContextProvider;
 
 /**
  * Handles the CLI menu for managing System Instructions Providers.
@@ -19,12 +20,12 @@ public class SystemInstructionsMenu {
     private final Scanner scanner;
 
     public void runMenu() {
-        List<AbstractSystemInstructionsProvider> providers = chat.getContextManager().getProviders();
+        List<ContextProvider> providers = chat.getContextManager().getProviders();
 
         while (true) {
             System.out.println("\n===== System Instructions Providers =====");
             for (int i = 0; i < providers.size(); i++) {
-                AbstractSystemInstructionsProvider p = providers.get(i);
+                ContextProvider p = providers.get(i);
                 String status = p.isEnabled() ? "ENABLED" : "DISABLED";
                 System.out.printf("%d: [%s] %s - %s\n", i + 1, status, p.getName(), p.getDescription());
             }
@@ -41,7 +42,7 @@ public class SystemInstructionsMenu {
                 try {
                     int providerIndex = Integer.parseInt(scanner.nextLine()) - 1;
                     if (providerIndex >= 0 && providerIndex < providers.size()) {
-                        AbstractSystemInstructionsProvider p = providers.get(providerIndex);
+                        ContextProvider p = providers.get(providerIndex);
                         p.setEnabled(!p.isEnabled());
                         System.out.printf("Provider '%s' is now %s.\n", p.getName(), p.isEnabled() ? "ENABLED" : "DISABLED");
                     } else {

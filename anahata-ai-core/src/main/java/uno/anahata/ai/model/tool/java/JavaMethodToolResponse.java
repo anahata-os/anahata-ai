@@ -6,19 +6,23 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.tool.AiToolException;
-import uno.anahata.ai.tool.AbstractJavaTool;
+import uno.anahata.ai.tool.JavaToolkitInstance;
 
 /**
  * A rich POJO that captures the complete and final outcome of a single tool
  * call. This class now follows a deferred execution model and manages the
- * thread-local context for {@link AbstractJavaTool} instances.
+ * thread-local context for {@link JavaToolkitInstance} instances.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -57,7 +61,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         long startTime = System.currentTimeMillis();
         JavaMethodTool tool = getCall().getTool();
         Object toolInstance = tool.getToolInstance();
-        AbstractJavaTool contextAwareTool = (toolInstance instanceof AbstractJavaTool) ? (AbstractJavaTool) toolInstance : null;
+        JavaToolkitInstance contextAwareTool = (toolInstance instanceof JavaToolkitInstance) ? (JavaToolkitInstance) toolInstance : null;
 
         try {
             if (contextAwareTool != null) {
@@ -87,9 +91,9 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             log.error("Tool execution failed for: {}", getCall().getToolName(), cause);
 
             if (cause instanceof AiToolException) {
-                setError(cause.getMessage());
+                addError(cause.getMessage());
             } else {
-                setError(getStackTraceAsString(cause));
+                addError(getStackTraceAsString(cause));
             }
             setStatus(ToolExecutionStatus.FAILED);
 

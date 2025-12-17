@@ -17,6 +17,7 @@ public class RagMessage extends UserMessage {
 
     public RagMessage(Chat chat) {
         super(chat);
+        new TextPart(this, "**RAG Message (Live Workspace)**");
     }
     
 

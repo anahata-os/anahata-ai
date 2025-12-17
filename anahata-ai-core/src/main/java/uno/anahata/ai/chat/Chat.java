@@ -88,8 +88,8 @@ public class Chat {
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
-        this.toolManager = new ToolManager(this);
         this.contextManager = new ContextManager(this);
+        this.toolManager = new ToolManager(this);        
         this.resourceManager = new ResourceManager();
         this.statusManager = new StatusManager(this);
 

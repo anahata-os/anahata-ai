@@ -6,8 +6,8 @@ import java.lang.reflect.Type;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.model.tool.AbstractToolParameter;
-import uno.anahata.ai.tool.AIToolParam;
 import uno.anahata.ai.tool.schema.SchemaProvider;
+import uno.anahata.ai.tool.AiToolParam;
 
 /**
  * A subclass of AbstractToolParameter that holds Java-specific reflection
@@ -47,7 +47,7 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
      * @throws Exception if schema generation fails.
      */
     public static JavaMethodToolParameter of(JavaMethodTool tool, Parameter p) throws Exception {
-        AIToolParam paramAnnotation = p.getAnnotation(AIToolParam.class);
+        AiToolParam paramAnnotation = p.getAnnotation(AiToolParam.class);
 
         String description;
         boolean required;

@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.context.ContextProvider;
+import uno.anahata.ai.model.core.RagMessage;
 
 
 /**
@@ -18,9 +20,8 @@ import uno.anahata.ai.chat.Chat;
  */
 @Getter
 @RequiredArgsConstructor
-public abstract class AbstractSystemInstructionsProvider {
-    protected final Chat chat;
-
+public abstract class AbstractContextProvider implements ContextProvider{
+    
     private final String id;
     
     private final String name;
@@ -29,14 +30,5 @@ public abstract class AbstractSystemInstructionsProvider {
     
     @Setter
     private boolean enabled = true;
-    
-    
-    /**
-     * Generates the context parts for this provider.
-     * @param chat The current chat session.
-     * @return A list of parts to be injected into the request.
-     * @throws Exception if an error occurs during context generation.
-     */
-    public abstract List<String> getSystemInstructions() throws Exception;
     
 }

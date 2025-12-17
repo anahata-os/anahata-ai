@@ -17,6 +17,7 @@
  */
 package uno.anahata.ai.tool;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.context.ContextProvider;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
@@ -98,7 +100,7 @@ public class ToolManager {
      *
      * @param classes The classes to scan for tools.
      */
-    public void registerClasses(Class<?>... classes) {
+    public final void registerClasses(Class<?>... classes) {
         log.info("Registering tool classes...");
         for (Class<?> clazz : classes) {
             try {
@@ -202,5 +204,20 @@ public class ToolManager {
         log.info("Applying application-wide tool preferences...");
         // TODO: Implement logic to apply preferences from config.getPreferences()
         // to each tool in getAllTools().
+    }
+    
+    /**
+     * Returns all 'enabled' toolkits that implement ContextProvider
+     * 
+     * @return enabled toolkits that implement ContextProvider
+     */
+    public List<ContextProvider> getContextProviders() {
+        List<ContextProvider> ret = new ArrayList<>();
+        for (AbstractToolkit at: getEnabledToolkits()) {
+            if (at instanceof ContextProvider cp) {
+                ret.add(cp);
+            }
+        }
+        return ret;
     }
 }

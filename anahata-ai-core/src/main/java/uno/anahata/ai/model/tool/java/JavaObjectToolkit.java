@@ -3,10 +3,15 @@ package uno.anahata.ai.model.tool.java;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.context.ContextProvider;
+import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.tool.AbstractToolkit;
+import uno.anahata.ai.tool.JavaToolkitInstance;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolkit;
 import uno.anahata.ai.tool.ToolManager;
@@ -22,7 +27,7 @@ import uno.anahata.ai.tool.ToolManager;
  */
 @Slf4j
 @Getter
-public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> {
+public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implements ContextProvider{
 
     /** The singleton instance of the tool class. */
     private final Object toolInstance;
@@ -68,4 +73,26 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> {
     public List<JavaMethodTool> getAllTools() {
         return tools;
     }
+
+    @Override
+    public String getId() {
+        return "" + System.identityHashCode(this);
+    }
+
+    @Override
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
+        if (toolInstance instanceof JavaToolkitInstance ajt) {
+            return ajt.getSystemInstructionParts(chat);
+        } else {
+            return Collections.EMPTY_LIST;
+        }
+    }
+
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        if (toolInstance instanceof JavaToolkitInstance ajt) {
+            ajt.populateMessage(ragMessage);
+        }
+    }
+    
 }
