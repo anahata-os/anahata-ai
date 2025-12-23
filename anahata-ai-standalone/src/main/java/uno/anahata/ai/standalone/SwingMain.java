@@ -12,6 +12,7 @@ import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.cli.CommandLineArgs;
 import uno.anahata.ai.swing.chat.MainPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
+import uno.anahata.ai.swing.icons.IconUtils;
 
 /**
  * The main entry point for the Anahata AI standalone Swing application.
@@ -48,6 +49,13 @@ public class SwingMain {
             JFrame frame = new JFrame("Anahata AI Assistant");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setPreferredSize(new Dimension(1200, 900));
+            
+            try {
+                // Use a larger icon for the frame (64x64)
+                frame.setIconImage(IconUtils.getIcon("anahata.png", 64, 64).getImage());
+            } catch (Exception e) {
+                log.warn("Could not load frame icon", e);
+            }
 
             // Create the MainPanel which manages multiple sessions
             MainPanel mainPanel = new MainPanel(chatConfig);
