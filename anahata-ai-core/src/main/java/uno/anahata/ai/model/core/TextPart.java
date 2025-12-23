@@ -24,7 +24,7 @@ public class TextPart extends AbstractPart {
      */
     public TextPart(AbstractMessage message, String text) {
         super(message);
-        this.text = text;
+        setText(text);
     }
     
     /**

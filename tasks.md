@@ -4,22 +4,25 @@ This document consolidates all active and pending tasks for the core framework a
 
 ## High Priority / Core Framework
 
-- [ ] Implement FailureTracker in V2 ToolManager
-- [ ] Implement Asynchronous Job Execution for V2 Tools
-- [ ] **GroundingMetadata Refactor:** Check the genai `GroundingMetadata` sources using `JavaSources` and move our gemini adapter logic to store the grounding metadata on the model message, not on the `Response`.
-- [ ] **AbstractRenderer Refactor:** Update the swing renderer and see if we can make `AbstractRenderer` with the fields/logic that are not "part" related from `AbstractPartRenderer` so we can have renderers that render "other things".
+- [ ] **UI Fix:** `JXErrorPane` stack trace still not indented (wrong component font changed).
+- [ ] **Response Modalities and Server Tools Design:** Implement `AbstractModel.getSupportedResponseModalities()` `AbstractModel.getAvailableServerTools()` and `GeminiModel` implementation. `RquestConfig` should have `List<String> getResponseModalities()` `List<ServerTool> getEnabledServerTools()`. 
+- [ ] add support for token streaming so the tokens are rendered as they arrive
+- [ ] add tool execution panels (tool calls and responses) needs extensive discussion before starting
+- [ ] Session Management: Implement the "Save" and "Load Session" buttons
+
 
 ## UI / Swing Module Tasks
 
-- [ ] Implement Toolbar (Clear Chat, Toggle Functions, Toggle Autoreply)
-- [ ] Implement Top Bar (provider and model selection combo boxes)
-- [ ] Flesh out `ToolsPanel` details (schemas, logging)
-- [ ] Advanced `InputPanel` Implementation (SwingX, Live Preview, Dynamic `UserMessage`, Stop Button, Send/Queue Logic, Generic SwingWorker)
-- [ ] Live Workspace: Implement the functionality for the "Live Workspace" button
-- [ ] Session Management: Implement the "Save" and "Load Session" buttons
-- [ ] **Report Bug Capability:** Implement a feature to allow users to report bugs directly from the application, including relevant context.
+
 
 ## Research & Technical Debt
 
 - [ ] Research Shared Schema Definitions for Token Optimization
 - [ ] Improve Binary File Handling in `LocalFiles` Tool
+- [ ] Implement FailureTracker in V2 ToolManager
+- [ ] Implement Asynchronous Job Execution for V2 Tools
+- [ ] Live Workspace: Implement the functionality for the "Live Workspace" button
+- [ ] Flesh out `ToolsPanel` details (schemas, logging)
+- [ ] Context Heatmap
+- [ ] Api Keys editor
+- [ ] **Report Bug Capability:** Implement a feature to allow users to report bugs directly from the application, including relevant context.

@@ -72,7 +72,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     private final JXPanel partsContainer;
     /** Container for message-level metadata and actions. */
     protected final JPanel footerContainer;
-
+    
     /** Cache of part panels to support incremental updates. */
     private final Map<AbstractPart, AbstractPartPanel> cachedPartPanels = new HashMap<>();
 
@@ -188,11 +188,14 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * Updates the text displayed in the header's title.
      */
     protected void updateHeaderInfoText() {
-        String metadataText = String.format("<html><b>%s</b> [#%d]", message.getRole().name(), message.getSequentialId());
-        metadataText += " <font color='#666666' size='3'>- " + TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp())) + "</font>";
-        metadataText += String.format(" <font color='#888888' size='3'><i>(Tokens: %d, Depth: %d)</i></font>", message.getTokenCount(), message.getDepth());
-        metadataText += "</html>";
-        setTitle(metadataText);
+        StringBuilder sb = new StringBuilder("<html>");
+        if (message.getChat() != null && message.getSequentialId() > 0) {
+            sb.append("<b>#").append(message.getSequentialId()).append("</b> ");
+        }
+        sb.append("<font color='#666666' size='3'>- ").append(TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp()))).append("</font>");
+        sb.append(String.format(" <font color='#888888' size='3'><i>(Tokens: %d, Depth: %d)</i></font>", message.getTokenCount(), message.getDepth()));
+        sb.append("</html>");
+        setTitle(sb.toString());
     }
 
     /**
@@ -241,15 +244,14 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     }
 
     private void renderFooterInternal() {
-        // Call subclass implementation
-        renderFooter(footerContainer);
+        renderFooter();
     }
 
     /**
      * Template method for subclasses to add components to the message footer.
-     * @param footer The footer container.
+     * Subclasses should use the {@code footerContainer} field directly.
      */
-    protected void renderFooter(JPanel footer) {
+    protected void renderFooter() {
         // Default implementation does nothing
     }
 

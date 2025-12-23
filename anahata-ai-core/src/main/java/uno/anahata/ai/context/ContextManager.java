@@ -25,9 +25,9 @@ import uno.anahata.ai.model.resource.AbstractResource;
 import uno.anahata.ai.status.ChatStatusProvider;
 
 /**
- * The definitive manager for a chat session's context in the V2/V3
+ * The definitive manager for a chat session's context in the V2
  * architecture. This class owns the conversation history and orchestrates the
- * hybrid context assembly process, combining the V3 dynamic history with the V1
+ * hybrid context assembly process, combining the V2 dynamic history with the V1
  * provider model.
  *
  * @author anahata-ai

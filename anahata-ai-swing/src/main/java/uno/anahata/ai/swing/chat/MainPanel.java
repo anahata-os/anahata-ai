@@ -1,5 +1,5 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.ai.swing.chat;
 
@@ -46,6 +46,7 @@ public class MainPanel extends JPanel implements LiveSessionsPanel.SessionContro
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sessionsPanel, chatContainer);
         splitPane.setDividerLocation(300);
+        splitPane.setOneTouchExpandable(true);
         add(splitPane, BorderLayout.CENTER);
     }
 

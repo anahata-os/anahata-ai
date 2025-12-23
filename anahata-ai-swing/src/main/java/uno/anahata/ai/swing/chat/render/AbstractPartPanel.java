@@ -3,6 +3,7 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -12,8 +13,8 @@ import java.awt.event.MouseEvent;
 import java.time.Instant;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import lombok.Getter;
@@ -31,7 +32,6 @@ import uno.anahata.ai.swing.chat.SwingChatConfig;
 import uno.anahata.ai.swing.chat.SwingChatConfig.UITheme;
 import uno.anahata.ai.swing.icons.CopyIcon;
 import uno.anahata.ai.swing.icons.DeleteIcon;
-import uno.anahata.ai.swing.icons.IconUtils;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.ai.swing.internal.SwingUtils;
 
@@ -61,6 +61,16 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     private final JButton copyButton;
     /** Button to remove the part from the message. */
     private final JButton removeButton;
+    /** Label to display the number of turns left for this part. */
+    private final JLabel turnsLeftLabel;
+
+    /** Container for the part's specific content ("the beef"). */
+    private final JXPanel centralContainer;
+    /** Container for part-level metadata and actions. */
+    protected final JPanel footerContainer;
+    
+    /** Label for the thought signature, if present. */
+    private JLabel thoughtSignatureLabel;
 
     /**
      * Constructs a new AbstractPartPanel.
@@ -79,10 +89,12 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         setTitleFont(new Font("SansSerif", Font.PLAIN, 11));
 
         // Background Gradient via MattePainter (Faint)
-        MattePainter mp = new MattePainter(new GradientPaint(0, 0, theme.getPartHeaderBg(), 1, 0, new Color(0,0,0,0)), true);
+        // Lightened the background by using a higher alpha or a lighter base color
+        Color startColor = new Color(248, 248, 248, 80); 
+        MattePainter mp = new MattePainter(new GradientPaint(0, 0, startColor, 1, 0, new Color(0,0,0,0)), true);
         setTitlePainter(mp);
 
-        // 2. Initialize Header Buttons
+        // 2. Initialize Header Buttons and Labels
         this.pruningToggleButton = new PruningToggleButton(part);
         
         this.copyButton = new JButton(new CopyIcon(14));
@@ -94,22 +106,37 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         this.removeButton.setToolTipText("Remove Part");
         this.removeButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
         this.removeButton.addActionListener(e -> part.remove());
+        
+        this.turnsLeftLabel = new JLabel();
+        this.turnsLeftLabel.setFont(new Font("SansSerif", Font.ITALIC, 10));
+        this.turnsLeftLabel.setForeground(new Color(160, 160, 160));
 
         // Copy button on the left
         setLeftDecoration(copyButton);
 
-        // Pruning and Remove buttons on the right
-        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        // Actions panel on the right
+        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         rightButtonPanel.setOpaque(false);
+        rightButtonPanel.add(turnsLeftLabel);
         rightButtonPanel.add(pruningToggleButton);
         rightButtonPanel.add(removeButton);
         setRightDecoration(rightButtonPanel);
 
-        // 3. Setup Content Container (Using the default JXPanel provided by JXTitledPanel)
+        // 3. Setup Content Layout
         JXPanel mainContainer = (JXPanel) getContentContainer();
-        mainContainer.setLayout(new BoxLayout(mainContainer, BoxLayout.Y_AXIS));
+        mainContainer.setLayout(new BorderLayout());
         mainContainer.setOpaque(false);
         mainContainer.setBorder(BorderFactory.createEmptyBorder(2, 8, 5, 8));
+
+        this.centralContainer = new JXPanel();
+        this.centralContainer.setLayout(new BoxLayout(this.centralContainer, BoxLayout.Y_AXIS));
+        this.centralContainer.setOpaque(false);
+        mainContainer.add(this.centralContainer, BorderLayout.CENTER);
+
+        this.footerContainer = new JPanel();
+        this.footerContainer.setLayout(new BoxLayout(this.footerContainer, BoxLayout.Y_AXIS));
+        this.footerContainer.setOpaque(false);
+        mainContainer.add(this.footerContainer, BorderLayout.SOUTH);
 
         setOpaque(false);
         setBorder(BorderFactory.createLineBorder(theme.getPartBorder(), 1, true));
@@ -160,6 +187,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     public final void render() {
         updateHeaderInfoText();
         renderContent();
+        renderFooterInternal();
         updateContentVisibility();
         revalidate();
         repaint();
@@ -170,26 +198,51 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
      */
     protected void updateHeaderInfoText() {
         String rawText = part.asText();
-        String summary = TextUtils.formatValue(rawText);
-        UITheme theme = chatConfig.getTheme();
+        // Fix: Handle null rawText to avoid "null" string in summary
+        String summary = (rawText == null || rawText.isEmpty()) ? "" : TextUtils.formatValue(rawText);
+        
+        log.info("Updating header info text for part: {}", summary);
 
         StringBuilder sb = new StringBuilder("<html>");
-        sb.append(String.format("<b>%s</b> ", part.getClass().getSimpleName()));
-        sb.append(String.format("<span style='color: #888888;'>[%s]</span>", summary));
+        sb.append(String.format("<span style='color: #888888;'>%s</span>", summary));
+        
+        // The message reference is now guaranteed to be present by the architectural fix in AbstractMessage.addPart.
         sb.append(" <font color='#999999' size='2'>- ").append(TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(part.getMessage().getTimestamp()))).append("</font>");
-        sb.append(String.format(" <font color='#AAAAAA' size='2'><i>(Turns Left: %d)</i></font>", part.getTurnsLeft()));
-
-        if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
-            String sig = TextUtils.formatValue(ts.getThoughtSignature());
-            sb.append(String.format(" <font color='#888888' size='2'>[Thought: %s]</font>", sig));
+        sb.append("</html>");
+        
+        String newTitle = sb.toString();
+        if (!newTitle.equals(getTitle())) {
+            setTitle(newTitle);
         }
         
-        sb.append("</html>");
-        setTitle(sb.toString());
+        // Update turns left label in the action panel
+        turnsLeftLabel.setText(String.valueOf(part.getTurnsLeft()));
+    }
+
+    private void renderFooterInternal() {
+        if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
+            if (thoughtSignatureLabel == null) {
+                String sig = TextUtils.formatValue(ts.getThoughtSignature());
+                thoughtSignatureLabel = new JLabel(String.format("<html><font color='#888888' size='2'>Thought Signature: %s</font></html>", sig));
+                thoughtSignatureLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
+                footerContainer.add(thoughtSignatureLabel);
+            }
+        }
+        
+        renderFooter();
+    }
+
+    /**
+     * Template method for subclasses to add components to the part footer.
+     * Subclasses should use the {@code footerContainer} field directly.
+     */
+    protected void renderFooter() {
+        // Default implementation does nothing
     }
 
     /**
      * Template method for subclasses to render their specific content.
+     * Subclasses should use the {@code centralContainer} field directly.
      */
     protected abstract void renderContent();
 

@@ -23,7 +23,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.Scrollable;
 import javax.swing.border.EmptyBorder;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.web.GroundingMetadata;
@@ -31,7 +30,7 @@ import uno.anahata.ai.model.web.GroundingSource;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig.UITheme;
 import uno.anahata.ai.swing.icons.IconUtils;
-import uno.anahata.ai.swing.chat.WrapLayout;
+import uno.anahata.ai.swing.internal.WrapLayout;
 
 /**
  * A specialized Swing panel for rendering {@link GroundingMetadata} in a rich,
@@ -41,7 +40,7 @@ import uno.anahata.ai.swing.chat.WrapLayout;
  * @author gemini-3-flash-preview
  */
 @Slf4j
-public class GroundingMetadataPanel extends JPanel implements Scrollable {
+public class GroundingMetadataPanel extends JPanel {
     private static final int V_GAP = 10;
     private final ChatPanel chatPanel;
     private final UITheme theme;
@@ -98,8 +97,9 @@ public class GroundingMetadataPanel extends JPanel implements Scrollable {
         titleLabel.setForeground(theme.getFontColor());
         
         try {
-            titleLabel.setIcon(IconUtils.getIcon("anahata.png"));
-            titleLabel.setIconTextGap(6);
+            // Explicitly use 24x24 icon as requested
+            titleLabel.setIcon(IconUtils.getIcon("anahata.png", 24, 24));
+            titleLabel.setIconTextGap(8);
         } catch (Exception e) {
             log.warn("Could not load icon for header.", e);
         }
@@ -201,30 +201,5 @@ public class GroundingMetadataPanel extends JPanel implements Scrollable {
             }
         });
         return label;
-    }
-
-    @Override
-    public Dimension getPreferredScrollableViewportSize() {
-        return getPreferredSize();
-    }
-
-    @Override
-    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return 24;
-    }
-
-    @Override
-    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return visibleRect.height;
-    }
-
-    @Override
-    public boolean getScrollableTracksViewportWidth() {
-        return true;
-    }
-
-    @Override
-    public boolean getScrollableTracksViewportHeight() {
-        return false;
     }
 }

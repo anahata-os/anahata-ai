@@ -6,7 +6,12 @@ import com.google.genai.errors.ClientException;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.GoogleMaps;
+import com.google.genai.types.GoogleSearch;
+import com.google.genai.types.GoogleSearchRetrieval;
 import com.google.genai.types.Model;
+import com.google.genai.types.ToolCodeExecution;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +27,7 @@ import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
+import uno.anahata.ai.model.provider.ServerTool;
 import uno.anahata.ai.tool.RetryableApiException;
 
 /**
@@ -55,7 +61,12 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public String getDescription() {
-        return genaiModel.description().orElse("No description available.");
+        String desc = genaiModel.description().orElse("");
+        String displayName = getDisplayName();
+        if (desc.isEmpty() || desc.equalsIgnoreCase(displayName)) {
+            return "";
+        }
+        return desc;
     }
 
     @Override
@@ -116,7 +127,9 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public boolean isSupportsFunctionCalling() {
-        return getSupportedActions().contains("tool");
+        // Currently we have no way of knowing if a model supports tool calling or not 
+        // (because 'tool' is never listed as a supported action). Just always return true for now.
+        return true;
     }
 
     @Override
@@ -140,6 +153,40 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
+    public List<String> getSupportedResponseModalities() {
+        List<String> modalities = new ArrayList<>();
+        modalities.add("TEXT");
+        modalities.add("IMAGE");
+        modalities.add("AUDIO");
+        return modalities;
+    }
+
+    @Override
+    public List<ServerTool> getSupportedServerTools() {
+        List<ServerTool> tools = new ArrayList<>();
+        tools.add(new ServerTool(GoogleSearch.class, "Google Search", "Search the web using Google."));
+        tools.add(new ServerTool(GoogleSearchRetrieval.class, "Google Search Retrieval", "Specialized retrieval tool powered by Google Search."));
+        tools.add(new ServerTool(ToolCodeExecution.class, "Code Execution", "Enables the model to execute Python code as part of generation."));
+        tools.add(new ServerTool(GoogleMaps.class, "Google Maps", "Tool to support Google Maps in Model."));
+        return tools;
+    }
+
+    @Override
+    public Float getDefaultTemperature() {
+        return genaiModel.temperature().orElse(null);
+    }
+
+    @Override
+    public Integer getDefaultTopK() {
+        return genaiModel.topK().orElse(null);
+    }
+
+    @Override
+    public Float getDefaultTopP() {
+        return genaiModel.topP().orElse(null);
+    }
+
+    @Override
     public Response generateContent(Chat chat, RequestConfig config, List<AbstractMessage> history) {
         Client client = provider.getClient();
 
@@ -158,6 +205,8 @@ public class GeminiModel extends AbstractModel {
         log.info("Sending request to Gemini model: {}", getModelId());
         try {
             GenerateContentConfig gcc = RequestConfigAdapter.toGoogle(config);
+            log.info("GenerateContentConfig: {}", gcc.toJson());
+            
             GenerateContentResponse response = client.models.generateContent(
                     getModelId(),
                     googleHistory,

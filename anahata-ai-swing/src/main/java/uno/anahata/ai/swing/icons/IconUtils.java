@@ -7,6 +7,8 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.ImageIcon;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -65,5 +67,23 @@ public class IconUtils {
             log.error("Error loading icon: {}", name, e);
             return null;
         }
+    }
+
+    /**
+     * Gets a list of images for the Anahata logo in various sizes.
+     * This is useful for setting the window icon, allowing the OS to choose the best size.
+     * 
+     * @return A list of logo images.
+     */
+    public static List<Image> getLogoImages() {
+        List<Image> images = new ArrayList<>();
+        int[] sizes = {16, 32, 48, 64, 128, 256};
+        for (int size : sizes) {
+            ImageIcon icon = getIcon("anahata.png", size, size);
+            if (icon != null) {
+                images.add(icon.getImage());
+            }
+        }
+        return images;
     }
 }

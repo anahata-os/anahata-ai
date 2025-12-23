@@ -24,6 +24,8 @@ import javax.swing.JToggleButton;
 import javax.swing.Timer;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jdesktop.swingx.JXHyperlink;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.internal.TimeUtils;
@@ -34,6 +36,7 @@ import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusManager;
 import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.swing.internal.SwingUtils;
 import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
 
 /**
@@ -274,13 +277,17 @@ public class StatusPanel extends JPanel {
             for (ApiErrorRecord error : errors) {
                 String displayString = StringUtils.abbreviateMiddle(error.getException().toString(), " ... ", 108) ;
                 String apiKeySuffix = StringUtils.right(error.getApiKey(), 4);
-                String errorText = String.format("  • [%s] [..%s] %s",
+                String errorText = String.format("[%s] [..%s] %s",
                                                  TIME_FORMAT.format(error.getTimestamp().toEpochMilli()),
                                                  apiKeySuffix,
                                                  displayString);
-                JLabel errorLabel = new JLabel(errorText);
-                errorLabel.setForeground(Color.RED.darker());
-                apiErrorsPanel.add(errorLabel);
+                
+                JXHyperlink errorLink = new JXHyperlink();
+                errorLink.setText(errorText);
+                errorLink.setToolTipText("Click to view full stack trace");
+                errorLink.setForeground(Color.RED.darker());
+                errorLink.addActionListener(e -> SwingUtils.showException(this, "API Error", error.getException().getMessage(), error.getException()));
+                apiErrorsPanel.add(errorLink);
             }
             
         } else if (lastResponse != null) {

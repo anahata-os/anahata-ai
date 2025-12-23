@@ -1,4 +1,4 @@
-package uno.anahata.ai.swing.chat;
+package uno.anahata.ai.swing.internal;
 
 import java.awt.*;
 import javax.swing.*;

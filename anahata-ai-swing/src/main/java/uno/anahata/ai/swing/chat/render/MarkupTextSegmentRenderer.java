@@ -109,15 +109,16 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             Node document = markdownParser.parse(currentContent);
             String html = htmlRenderer.render(document);
 
-            String fontStyle = isThought ? "font-style: italic; color: " + SwingUtils.toHtmlColor(theme.getThoughtFg()) + ";" : "color: " + SwingUtils.toHtmlColor(theme.getFontColor()) + ";";
-            String fontWeight = isThought ? "font-weight: normal;" : "font-weight: normal;";
+            String color = isThought ? SwingUtils.toHtmlColor(theme.getThoughtFg()) : SwingUtils.toHtmlColor(theme.getFontColor());
+            String fontStyle = isThought ? "italic" : "normal";
 
-            StyleSheet sheet = ((HTMLEditorKit) innerComponent.getEditorKit()).getStyleSheet();
-            // This is still a hack. A proper solution would involve modifying the existing rule.
-            // For now, adding a new rule will effectively override the previous one if properties are the same.
-            sheet.addRule("body { " + fontStyle + fontWeight + "}");
+            // Wrap the content in a styled div to ensure the style is applied correctly
+            String styledHtml = String.format(
+                "<html><body><div style='color: %s; font-style: %s;'>%s</div></body></html>",
+                color, fontStyle, html
+            );
 
-            innerComponent.setText("<html><body>" + html + "</body></html>");
+            innerComponent.setText(styledHtml);
             contentRendered(); // Mark content as rendered
         }
 

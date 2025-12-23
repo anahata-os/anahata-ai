@@ -12,7 +12,7 @@ import uno.anahata.ai.chat.ChatConfig;
 
 /**
  * The abstract base class for all components of a {@link AbstractMessage}.
- * This class is central to the V3 context management system, providing a rich,
+ * This class is central to the V2 context management system, providing a rich,
  * self-contained model for intelligent, time-based pruning and full context awareness.
  *
  * @author anahata-gemini-pro-2.5

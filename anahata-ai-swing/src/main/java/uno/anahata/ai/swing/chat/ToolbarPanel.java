@@ -30,19 +30,34 @@ import uno.anahata.ai.swing.icons.ServerToolsIcon;
 @Slf4j
 @Getter
 public class ToolbarPanel extends JPanel {
+    /** The size of the icons in the toolbar. */
     private static final int ICON_SIZE = 24;
 
-    private final ChatPanel chatPanel; // Reference to the parent ChatPanel
+    /** The parent chat panel. */
+    private final ChatPanel chatPanel; 
+    /** The active chat session. */
     private Chat chat;
+    /** The chat configuration. */
     private SwingChatConfig config;
     
+    /** Toggle button for local tool execution. */
     private JToggleButton toggleLocalToolsButton;
+    /** Toggle button for server-side tool execution. */
     private JToggleButton toggleServerToolsButton;
+    /** Toggle button for automatic tool loop replies. */
     private JToggleButton toggleAutoreplyButton;
+    /** Toggle button for showing/hiding pruned parts. */
     private JToggleButton togglePrunedPartsButton;
+    /** Button to clear the chat history. */
     private JButton clearChatButton;
+    /** Button to trigger context compression. */
     private JButton compressContextButton;
 
+    /**
+     * Constructs a new ToolbarPanel.
+     * 
+     * @param chatPanel The parent chat panel.
+     */
     public ToolbarPanel(ChatPanel chatPanel) {
         this.chatPanel = chatPanel;
         this.chat = chatPanel.getChat();
@@ -52,6 +67,9 @@ public class ToolbarPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
     }
 
+    /**
+     * Initializes the UI components and layout.
+     */
     public void initComponents() {
         // 1. Clear Chat Button (Top)
         clearChatButton = createIconButton(new RestartIcon(ICON_SIZE), "Clear the entire chat history.");
@@ -66,31 +84,34 @@ public class ToolbarPanel extends JPanel {
         compressContextButton.setEnabled(false);
         add(compressContextButton);
 
-        // Vertical Glue to push toggles to the bottom
+        // Vertical Glue to push toggles to the middle
         add(Box.createVerticalGlue());
         
-        // 3. Toggle Pruned Parts Button (Bottom)
+        // 3. Toggle Pruned Parts Button (Middle)
         togglePrunedPartsButton = createIconToggleButton(new PrunedPartsIcon(ICON_SIZE), "Show/Hide pruned parts in the conversation view.", config.isShowPrunedParts());
         togglePrunedPartsButton.addActionListener(this::togglePrunedParts);
         add(togglePrunedPartsButton);
 
-        // 4. Toggle Local Tools Button (Bottom)
+        // 4. Toggle Local Tools Button (Middle)
         toggleLocalToolsButton = createIconToggleButton(new LocalToolsIcon(ICON_SIZE), "Enable/Disable local tool execution (Functions).", config.isLocalToolsEnabled());
         toggleLocalToolsButton.addActionListener(this::toggleLocalTools);
         add(toggleLocalToolsButton);
 
-        // 5. Toggle Server Tools Button (Bottom)
-        toggleServerToolsButton = createIconToggleButton(new ServerToolsIcon(ICON_SIZE), "Enable/Disable server-side tool execution (e.g., Google Search).", !config.isLocalToolsEnabled());
+        // 5. Toggle Server Tools Button (Middle)
+        toggleServerToolsButton = createIconToggleButton(new ServerToolsIcon(ICON_SIZE), "Enable/Disable server-side tool execution (e.g., Google Search).", config.isServerToolsEnabled());
         toggleServerToolsButton.addActionListener(this::toggleServerTools);
         add(toggleServerToolsButton);
         
-        // 6. Toggle Autoreply Button (Bottom)
+        // 6. Toggle Autoreply Button (Middle)
         toggleAutoreplyButton = createIconToggleButton(new AutoReplyIcon(ICON_SIZE), "Enable/Disable automatic replying of tool execution.", config.isAutoReplyTools());
         toggleAutoreplyButton.addActionListener(this::toggleAutoreply);
         add(toggleAutoreplyButton);
         
+        // Vertical Glue to keep the toggles in the middle
+        add(Box.createVerticalGlue());
+
         // Initial state sync
-        updateToolToggles(config.isLocalToolsEnabled());
+        syncToggles();
     }
 
     /**
@@ -102,9 +123,16 @@ public class ToolbarPanel extends JPanel {
         
         togglePrunedPartsButton.setSelected(config.isShowPrunedParts());
         toggleAutoreplyButton.setSelected(config.isAutoReplyTools());
-        updateToolToggles(config.isLocalToolsEnabled());
+        syncToggles();
     }
 
+    /**
+     * Helper method to create a standard icon button.
+     * 
+     * @param icon The icon to display.
+     * @param tooltip The tooltip text.
+     * @return The created JButton.
+     */
     private JButton createIconButton(javax.swing.Icon icon, String tooltip) {
         JButton button = new JButton(icon);
         button.setToolTipText(tooltip);
@@ -113,6 +141,14 @@ public class ToolbarPanel extends JPanel {
         return button;
     }
 
+    /**
+     * Helper method to create a standard icon toggle button.
+     * 
+     * @param icon The icon to display.
+     * @param tooltip The tooltip text.
+     * @param selected The initial selected state.
+     * @return The created JToggleButton.
+     */
     private JToggleButton createIconToggleButton(javax.swing.Icon icon, String tooltip, boolean selected) {
         JToggleButton button = new JToggleButton(icon, selected);
         button.setToolTipText(tooltip);
@@ -121,15 +157,27 @@ public class ToolbarPanel extends JPanel {
         return button;
     }
 
+    /**
+     * Action listener for the clear chat button.
+     * @param e The action event.
+     */
     private void clearChat(ActionEvent e) {
         log.info("Clear Chat button pressed.");
         chat.clear();
     }
 
+    /**
+     * Action listener for the compress context button.
+     * @param e The action event.
+     */
     private void compressContext(ActionEvent e) {
         log.info("Compress Context button pressed. Action is currently disabled.");
     }
     
+    /**
+     * Action listener for the toggle pruned parts button.
+     * @param e The action event.
+     */
     private void togglePrunedParts(ActionEvent e) {
         boolean show = togglePrunedPartsButton.isSelected();
         config.setShowPrunedParts(show);
@@ -137,21 +185,40 @@ public class ToolbarPanel extends JPanel {
         // TODO: Trigger a full re-render of the conversation view here
     }
 
+    /**
+     * Action listener for the toggle local tools button.
+     * @param e The action event.
+     */
     private void toggleLocalTools(ActionEvent e) {
-        updateToolToggles(true);
+        boolean selected = toggleLocalToolsButton.isSelected();
+        config.setLocalToolsEnabled(selected);
+        log.info("Local tools toggled to: {}", selected);
+        syncToggles();
     }
 
+    /**
+     * Action listener for the toggle server tools button.
+     * @param e The action event.
+     */
     private void toggleServerTools(ActionEvent e) {
-        updateToolToggles(false);
+        boolean selected = toggleServerToolsButton.isSelected();
+        config.setServerToolsEnabled(selected);
+        log.info("Server tools toggled to: {}", selected);
+        syncToggles();
     }
     
-    private void updateToolToggles(boolean localEnabled) {
-        chat.getConfig().setLocalToolsEnabled(localEnabled);
-        toggleLocalToolsButton.setSelected(localEnabled);
-        toggleServerToolsButton.setSelected(!localEnabled);
-        log.info("Tool execution mode set to: {}", localEnabled ? "LOCAL" : "SERVER");
+    /**
+     * Synchronizes the toggle buttons with the current configuration.
+     */
+    private void syncToggles() {
+        toggleLocalToolsButton.setSelected(config.isLocalToolsEnabled());
+        toggleServerToolsButton.setSelected(config.isServerToolsEnabled());
     }
 
+    /**
+     * Action listener for the toggle autoreply button.
+     * @param e The action event.
+     */
     private void toggleAutoreply(ActionEvent e) {
         boolean enabled = toggleAutoreplyButton.isSelected();
         chat.getConfig().setAutoReplyTools(enabled);

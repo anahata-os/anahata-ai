@@ -58,6 +58,41 @@ public abstract class AbstractModel {
     public abstract boolean isSupportsCachedContent();
 
     /**
+     * Gets the list of response modalities supported by this model (e.g., "TEXT", "IMAGE", "AUDIO").
+     * 
+     * @return A list of supported response modalities.
+     */
+    public abstract List<String> getSupportedResponseModalities();
+
+    /**
+     * Gets the list of server-side tools supported by this model.
+     * 
+     * @return A list of supported server tools.
+     */
+    public abstract List<ServerTool> getSupportedServerTools();
+
+    /**
+     * Gets the default temperature for this model.
+     * 
+     * @return The default temperature, or null if not specified.
+     */
+    public abstract Float getDefaultTemperature();
+
+    /**
+     * Gets the default topK for this model.
+     * 
+     * @return The default topK, or null if not specified.
+     */
+    public abstract Integer getDefaultTopK();
+
+    /**
+     * Gets the default topP for this model.
+     * 
+     * @return The default topP, or null if not specified.
+     */
+    public abstract Float getDefaultTopP();
+
+    /**
      * The core method for interacting with an AI model. It takes a configuration
      * object and a list of messages and returns a standardized Response.
      *

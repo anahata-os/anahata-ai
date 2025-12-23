@@ -10,6 +10,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import lombok.NonNull;
+import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.ModelBlobPart;
@@ -26,7 +27,7 @@ import uno.anahata.ai.swing.components.CodeHyperlink;
 public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage> {
 
     private GroundingMetadataPanel groundingPanel;
-    private JPanel footerActionPanel;
+    private JPanel actionPanel;
 
     /**
      * Constructs a new ModelMessagePanel.
@@ -39,26 +40,27 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
     }
 
     @Override
-    protected void renderFooter(JPanel footer) {
+    protected void renderFooter() {
         if (message.getGroundingMetadata() != null) {
             if (groundingPanel == null) {
                 groundingPanel = new GroundingMetadataPanel(chatPanel, message.getGroundingMetadata());
             }
             
-            if (!footer.isAncestorOf(groundingPanel)) {
-                footer.add(groundingPanel, 0);
+            if (!footerContainer.isAncestorOf(groundingPanel)) {
+                footerContainer.add(groundingPanel, 0);
             }
         }
         
-        if (footerActionPanel == null) {
-            footerActionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            footerActionPanel.setOpaque(false);
-            String popupTitle = "ModelMessage #" + message.getSequentialId();
-            footerActionPanel.add(new CodeHyperlink("Json", popupTitle, message.getRawJson(), "json"));
+        if (actionPanel == null) {
+            actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            actionPanel.setOpaque(false);
+            String popupTitle = "Model Message #" + message.getSequentialId();
+            String prettyJson = JacksonUtils.prettyPrintJsonString(message.getRawJson());
+            actionPanel.add(new CodeHyperlink("Json", popupTitle, prettyJson, "json"));
         }
         
-        if (!footer.isAncestorOf(footerActionPanel)) {
-            footer.add(footerActionPanel);
+        if (!footerContainer.isAncestorOf(actionPanel)) {
+            footerContainer.add(actionPanel);
         }
     }
 

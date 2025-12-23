@@ -2,12 +2,14 @@
 package uno.anahata.ai.model.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.model.provider.ServerTool;
 import uno.anahata.ai.model.tool.AbstractTool;
 
 /**
@@ -27,11 +29,21 @@ public class RequestConfig {
     private final Chat chat;
 
     //== Behavioral Parameters ==//
+    /** The temperature for the request. */
     private Float temperature;
+    /** The maximum number of output tokens. */
     private Integer maxOutputTokens;
+    /** The top K parameter. */
     private Integer topK;
+    /** The top P parameter. */
     private Float topP;
     
+    /** The list of response modalities requested for this specific request. */
+    private List<String> responseModalities = new ArrayList<>();
+
+    /** The list of server-side tools enabled for this specific request. */
+    private List<ServerTool> enabledServerTools = new ArrayList<>();
+
     /** If true, the adapter should include pruned messages and parts in the API request. For debugging. */
     private boolean includePruned = false;
 
@@ -54,7 +66,14 @@ public class RequestConfig {
         if (chat.getConfig().isLocalToolsEnabled()) {
             return chat.getToolManager().getEnabledTools();
         }
-        // In the future, this could return a representation of server-side tools.
         return null;
+    }
+
+    /**
+     * Checks if server-side tools (like Google Search) are enabled for this request.
+     * @return true if server tools are enabled.
+     */
+    public boolean isServerToolsEnabled() {
+        return chat.getConfig().isServerToolsEnabled();
     }
 }

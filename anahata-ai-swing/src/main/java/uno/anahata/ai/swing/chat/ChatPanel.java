@@ -11,7 +11,6 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 
 /**
  * The main, top-level panel for the Anahata AI Swing UI.
@@ -28,6 +27,8 @@ public class ChatPanel extends JPanel {
     private SwingChatConfig chatConfig; 
     /** The tabbed pane for switching between chat and tools. */
     private final JTabbedPane tabbedPane;
+    /** The panel for editing request configuration. */
+    private final RequestConfigPanel configPanel;
     /** The panel for managing tools. */
     private final ToolsPanel toolsPanel;
     /** The panel for user input. */
@@ -51,6 +52,7 @@ public class ChatPanel extends JPanel {
         this.chatConfig = (SwingChatConfig) chat.getConfig(); 
         
         this.tabbedPane = new JTabbedPane();
+        this.configPanel = new RequestConfigPanel(this);
         this.toolsPanel = new ToolsPanel(this);
         this.inputPanel = new InputPanel(this); 
         this.headerPanel = new HeaderPanel(this);
@@ -72,17 +74,20 @@ public class ChatPanel extends JPanel {
 
         // Configure Tabbed Pane
         tabbedPane.addTab("Chat", conversationPanel);
+        tabbedPane.addTab("Config", configPanel);
         tabbedPane.addTab("Tools", toolsPanel);
 
         // Create a panel to hold both InputPanel and StatusPanel
         JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.add(inputPanel, BorderLayout.NORTH); 
+        // Use CENTER for inputPanel so it grows vertically when the split pane is resized.
+        southPanel.add(inputPanel, BorderLayout.CENTER); 
         southPanel.add(statusPanel, BorderLayout.SOUTH); 
 
         // Use a SplitPane for the main content and the input area
         JSplitPane mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, southPanel);
         mainSplitPane.setResizeWeight(1.0); // Give all extra space to the tabbed pane
         mainSplitPane.setDividerLocation(0.7); // Initial balance
+        mainSplitPane.setOneTouchExpandable(true);
 
         // Add components to the main panel
         add(headerPanel, BorderLayout.NORTH);
@@ -104,6 +109,7 @@ public class ChatPanel extends JPanel {
             // Update child components
             headerPanel.reload();
             conversationPanel.reload();
+            // Note: RequestConfigPanel doesn't have a reload() yet, but it's initialized with chat
             toolsPanel.reload();
             statusPanel.reload();
             inputPanel.reload();
@@ -112,13 +118,5 @@ public class ChatPanel extends JPanel {
             revalidate();
             repaint();
         });
-    }
-
-    /**
-     * Convenience method to get the EditorKitProvider from the chat configuration.
-     * @return The EditorKitProvider.
-     */
-    public EditorKitProvider getEditorKitProvider() {
-        return chatConfig.getEditorKitProvider();
     }
 }

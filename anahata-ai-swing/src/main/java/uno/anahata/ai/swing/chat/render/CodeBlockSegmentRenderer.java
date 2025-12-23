@@ -135,6 +135,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
         textArea.setLineWrap(false); // Disable line wrap to allow horizontal scrolling
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
+        textArea.setTabSize(4); // Set tab size to 4 for better indentation
         
         // Use theme colors if possible, otherwise defaults
         textArea.setBackground(new java.awt.Color(245, 245, 245));

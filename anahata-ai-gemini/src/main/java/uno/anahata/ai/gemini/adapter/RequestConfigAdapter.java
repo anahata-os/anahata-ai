@@ -5,10 +5,12 @@ import com.google.genai.types.FunctionCallingConfig;
 import com.google.genai.types.FunctionCallingConfigMode;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GoogleMaps;
 import com.google.genai.types.GoogleSearch;
+import com.google.genai.types.GoogleSearchRetrieval;
 import com.google.genai.types.ThinkingConfig;
-import com.google.genai.types.ThinkingLevel;
 import com.google.genai.types.Tool;
+import com.google.genai.types.ToolCodeExecution;
 import com.google.genai.types.ToolConfig;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.core.RequestConfig;
+import uno.anahata.ai.model.provider.ServerTool;
 
 /**
  * A focused adapter responsible for converting our model-agnostic RequestConfig
@@ -41,10 +44,19 @@ public final class RequestConfigAdapter {
         if (anahataConfig == null) {
             return null;
         }
+        
+        log.info("Generating GenerateContentConfig for " + anahataConfig);
 
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
-
-        builder.thinkingConfig(ThinkingConfig.builder().includeThoughts(true)/*.thinkingLevel(ThinkingLevel.Known.HIGH)*/);
+        
+        List<String> modalities = anahataConfig.getResponseModalities();
+        if (modalities != null && !modalities.isEmpty()) {
+            builder.responseModalities(modalities);
+        } else {
+            builder.responseModalities("TEXT");
+        }
+        
+        builder.thinkingConfig(ThinkingConfig.builder().includeThoughts(true).build());
 
         Optional.ofNullable(anahataConfig.getTemperature()).ifPresent(builder::temperature);
         Optional.ofNullable(anahataConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);
@@ -55,6 +67,7 @@ public final class RequestConfigAdapter {
         Optional.ofNullable(anahataConfig.getTopP()).ifPresent(builder::topP);
 
         if (anahataConfig.getLocalTools() != null && !anahataConfig.getLocalTools().isEmpty()) {
+            log.info("Local tools enabled, adding " + anahataConfig.getLocalTools().size() + " tools");
             List<FunctionDeclaration> declarations = anahataConfig.getLocalTools().stream()
                     .map(tool -> new GeminiFunctionDeclarationAdapter(tool).toGoogle())
                     .filter(Objects::nonNull)
@@ -68,10 +81,27 @@ public final class RequestConfigAdapter {
                                 .mode(FunctionCallingConfigMode.Known.AUTO)).build();
                 builder.toolConfig(tc);
             }
+        } else if (anahataConfig.isServerToolsEnabled()) {
+            List<ServerTool> enabledTools = anahataConfig.getEnabledServerTools();
+            if (enabledTools != null && !enabledTools.isEmpty()) {
+                log.info("Server tools enabled, adding {} tools", enabledTools.size());
+                Tool.Builder toolBuilder = Tool.builder();
+                for (ServerTool st : enabledTools) {
+                    Object id = st.getId();
+                    if (id == GoogleSearch.class) {
+                        toolBuilder.googleSearch(GoogleSearch.builder().build());
+                    } else if (id == GoogleSearchRetrieval.class) {
+                        toolBuilder.googleSearchRetrieval(GoogleSearchRetrieval.builder().build());
+                    } else if (id == ToolCodeExecution.class) {
+                        toolBuilder.codeExecution(ToolCodeExecution.builder().build());
+                    } else if (id == GoogleMaps.class) {
+                        toolBuilder.googleMaps(GoogleMaps.builder().build());
+                    }
+                }
+                builder.tools(toolBuilder.build());
+            }
         } else {
-            log.info("Enabled Local tools: " + anahataConfig.getLocalTools() + ", adding google search");
-            Tool googleTools = Tool.builder().googleSearch(GoogleSearch.builder().build()).build();
-            builder.tools(googleTools);
+            log.info("Both local and server tools are disabled.");
         }
 
         return builder.build();

@@ -80,7 +80,7 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
      */
     protected abstract R createResponse(AbstractToolMessage toolMessage);
     
-    //<editor-fold defaultstate="collapsed" desc="V3 Context Management Delegation">
+    //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation">
     @Override
     protected int getDefaultTurnsToKeep() {
         // A tool call's lifecycle is always identical to its response.

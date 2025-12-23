@@ -6,8 +6,10 @@ package uno.anahata.ai.swing.internal;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
@@ -23,9 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jdesktop.swingx.JXErrorPane;
-import org.jdesktop.swingx.error.ErrorInfo;
+import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.render.CodeBlockSegmentRenderer;
 
@@ -87,8 +87,8 @@ public class SwingUtils {
     }
 
     /**
-     * Displays a modal SwingX error dialog with the given task name, description, and throwable.
-     * This method assumes it is called on the Event Dispatch Thread (EDT).
+     * Displays a modal error dialog with the given task name, description, and throwable.
+     * This method uses a custom ExceptionDialog to ensure proper formatting of stack traces.
      *
      * @param component the component the dialog will be relative to
      * @param taskName The name of the task that failed.
@@ -96,16 +96,30 @@ public class SwingUtils {
      * @param throwable The Throwable object representing the exception.
      */
     public static void showException(java.awt.Component component, String taskName, String description, Throwable throwable) {
-        ErrorInfo errorInfo = new ErrorInfo(
-                taskName,
-                description,
-                ExceptionUtils.getStackTrace(throwable),
-                "Error in " + taskName,
-                throwable,
-                java.util.logging.Level.SEVERE,
-                null);
-        Window ancestor = component != null ? SwingUtilities.getWindowAncestor(component) : null;
-        JXErrorPane.showDialog(ancestor, errorInfo);
+        ExceptionDialog.show(component, taskName, description, throwable);
+    }
+
+    /**
+     * Recursively searches for a component of a specific type within a container.
+     * 
+     * @param <T> The type of component to find.
+     * @param container The container to search.
+     * @param type The class of the component type.
+     * @return The first matching component found, or null if none exist.
+     */
+    public static <T extends Component> T findComponent(Container container, Class<T> type) {
+        for (Component c : container.getComponents()) {
+            if (type.isInstance(c)) {
+                return type.cast(c);
+            }
+            if (c instanceof Container) {
+                T result = findComponent((Container) c, type);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -187,6 +201,7 @@ public class SwingUtils {
      * @param json The JSON string to display.
      */
     public static void showJsonDialog(Component parent, String title, String json) {
-        showCodeBlockDialog(parent, title, json, "json");
+        String prettyJson = JacksonUtils.prettyPrintJsonString(json);
+        showCodeBlockDialog(parent, title, prettyJson, "json");
     }
 }

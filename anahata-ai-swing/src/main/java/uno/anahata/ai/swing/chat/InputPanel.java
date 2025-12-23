@@ -24,6 +24,7 @@ import org.jdesktop.swingx.JXTextArea;
 
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.InputUserMessage;
+import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.swing.icons.IconUtils;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.ai.swing.internal.SwingTask;
@@ -101,6 +102,7 @@ public class InputPanel extends JPanel {
         // Ctrl+Enter to send
         KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_DOWN_MASK);
         inputTextArea.getInputMap(JComponent.WHEN_FOCUSED).put(ctrlEnter, "sendMessage");
+
         inputTextArea.getActionMap().put("sendMessage", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -123,6 +125,7 @@ public class InputPanel extends JPanel {
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputScrollPane, previewScrollPane);
         splitPane.setResizeWeight(0.5); 
         splitPane.setDividerLocation(0.5); 
+        splitPane.setOneTouchExpandable(true);
 
         add(splitPane, BorderLayout.CENTER);
 
@@ -258,6 +261,10 @@ public class InputPanel extends JPanel {
             // Send a new message
             taskName = "Send Message";
             final InputUserMessage messageToSend = this.currentMessage; 
+            
+            // IMMEDIATE CLEAR
+            resetMessage();
+            
             backgroundTask = () -> {
                 chat.sendMessage(messageToSend);
                 return null;
@@ -276,12 +283,11 @@ public class InputPanel extends JPanel {
                     log.info(taskName + " completed successfully.");
                     setButtonsEnabled(true);
                     inputTextArea.requestFocusInWindow();
-                    resetMessage(); 
                 },
                 (error) -> {
                     // On Error (UI Thread)
                     setButtonsEnabled(true);
-                    resetMessage(); 
+                    // TODO: Restore message or show error?
                 }
         );
     }

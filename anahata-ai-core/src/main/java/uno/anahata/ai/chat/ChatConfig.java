@@ -5,6 +5,7 @@ package uno.anahata.ai.chat;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -62,8 +63,13 @@ public class ChatConfig {
     private RequestConfig requestConfig;
     
     //<editor-fold defaultstate="collapsed" desc="Chat Loop">
-    /** If true, local Java tools are enabled. If false, server-side tools (like Google Search) are used. */
+    /** If true, local Java tools are enabled. */
+    @Setter(AccessLevel.NONE)
     private boolean localToolsEnabled = true;
+
+    /** If true, server-side tools (like Google Search) are enabled. */
+    @Setter(AccessLevel.NONE)
+    private boolean serverToolsEnabled = false;
 
     /** If true, the chat loop will automatically re-prompt the model after executing tools. */
     private boolean autoReplyTools = false;
@@ -110,6 +116,32 @@ public class ChatConfig {
         return requestConfig;
     }
     
+    /**
+     * Sets whether local tools are enabled. Enabling local tools automatically
+     * disables server-side tools.
+     * 
+     * @param enabled true to enable local tools.
+     */
+    public void setLocalToolsEnabled(boolean enabled) {
+        this.localToolsEnabled = enabled;
+        if (enabled) {
+            this.serverToolsEnabled = false;
+        }
+    }
+
+    /**
+     * Sets whether server-side tools are enabled. Enabling server-side tools
+     * automatically disables local tools.
+     * 
+     * @param enabled true to enable server-side tools.
+     */
+    public void setServerToolsEnabled(boolean enabled) {
+        this.serverToolsEnabled = enabled;
+        if (enabled) {
+            this.localToolsEnabled = false;
+        }
+    }
+
     /**
      * Gets the maximum number of tokens allowed in the context window.
      *

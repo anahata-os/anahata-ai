@@ -3,6 +3,8 @@
  */
 package uno.anahata.ai.chat;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock; // Import ReentrantLock
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -20,6 +23,7 @@ import uno.anahata.ai.AiExecutors;
 import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.UserMessage;
@@ -43,7 +47,7 @@ import uno.anahata.ai.tool.ToolManager;
  */
 @Slf4j
 @Getter
-public class Chat {
+public class Chat implements PropertyChangeSource {
 
     private final ChatConfig config;
     private final ToolManager toolManager;
@@ -53,10 +57,12 @@ public class Chat {
     private final StatusManager statusManager;
     private final List<AbstractAiProvider> providers = new ArrayList<>();
 
+    /** Support for firing property change events. */
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+
     /**
      * The currently selected model for the chat session.
      */
-    @Setter
     private AbstractModel selectedModel;
 
     /**
@@ -115,6 +121,17 @@ public class Chat {
         }
         
         ChatRegistry.register(this);
+    }
+
+    /**
+     * Sets the selected model and fires a property change event.
+     * 
+     * @param selectedModel The new model to select.
+     */
+    public void setSelectedModel(AbstractModel selectedModel) {
+        AbstractModel oldModel = this.selectedModel;
+        this.selectedModel = selectedModel;
+        propertyChangeSupport.firePropertyChange("selectedModel", oldModel, selectedModel);
     }
 
     /**
@@ -390,5 +407,29 @@ public class Chat {
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }
+    }
+
+    /**
+     * Adds a PropertyChangeListener to this chat session.
+     * 
+     * @param listener The listener to add.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this chat session.
+     * 
+     * @param listener The listener to remove.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return propertyChangeSupport;
     }
 }

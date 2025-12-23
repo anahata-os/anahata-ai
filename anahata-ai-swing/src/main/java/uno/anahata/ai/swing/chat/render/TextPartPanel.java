@@ -63,9 +63,9 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
 
         if (markdownText == null || markdownText.trim().isEmpty()) {
             cachedSegmentRenderers.clear(); 
-            getContentContainer().removeAll();
-            getContentContainer().revalidate();
-            getContentContainer().repaint();
+            getCentralContainer().removeAll();
+            getCentralContainer().revalidate();
+            getCentralContainer().repaint();
             return;
         }
 
@@ -81,22 +81,22 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
             JComponent component = segmentRenderer.getComponent(); 
             if (component != null) {
                 component.setAlignmentX(Component.LEFT_ALIGNMENT);
-                if (i >= getContentContainer().getComponentCount() || getContentContainer().getComponent(i) != component) {
-                    getContentContainer().add(component, i);
+                if (i >= getCentralContainer().getComponentCount() || getCentralContainer().getComponent(i) != component) {
+                    getCentralContainer().add(component, i);
                 }
             }
         }
         
         // Remove trailing components (leftovers from previous renders with more segments)
-        while (getContentContainer().getComponentCount() > cachedSegmentRenderers.size()) {
-            getContentContainer().remove(getContentContainer().getComponentCount() - 1);
+        while (getCentralContainer().getComponentCount() > cachedSegmentRenderers.size()) {
+            getCentralContainer().remove(getCentralContainer().getComponentCount() - 1);
         }
         
         // Add vertical glue to push content to the top
-        getContentContainer().add(Box.createVerticalGlue());
+        getCentralContainer().add(Box.createVerticalGlue());
 
-        getContentContainer().revalidate();
-        getContentContainer().repaint();
+        getCentralContainer().revalidate();
+        getCentralContainer().repaint();
     }
 
     /**

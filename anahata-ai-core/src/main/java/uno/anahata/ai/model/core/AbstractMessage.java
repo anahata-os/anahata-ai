@@ -18,7 +18,7 @@ import uno.anahata.ai.chat.Chat;
 
 /**
  * The abstract base class for all messages in a conversation, providing common
- * metadata and functionality for the rich, hierarchical V3 domain model. It
+ * metadata and functionality for the rich, hierarchical V2 domain model. It
  * supports type-safe roles through its subclasses and ensures each message has
  * a unique identity, timestamp, and full access to the chat context.
  *
@@ -65,7 +65,7 @@ public abstract class AbstractMessage implements PropertyChangeSource {
 
     /**
      * A backward reference to the Chat session that owns this message. This is
-     * the root of the V3 context management system, allowing any domain object
+     * the root of the V2 context management system, allowing any domain object
      * to access the full application state. It is intentionally not transient
      * to support full serialization with Kryo.
      */

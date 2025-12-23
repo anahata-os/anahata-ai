@@ -51,10 +51,10 @@ public class SwingMain {
             frame.setPreferredSize(new Dimension(1200, 900));
             
             try {
-                // Use a larger icon for the frame (64x64)
-                frame.setIconImage(IconUtils.getIcon("anahata.png", 64, 64).getImage());
+                // Provide multiple icon sizes for better OS integration
+                frame.setIconImages(IconUtils.getLogoImages());
             } catch (Exception e) {
-                log.warn("Could not load frame icon", e);
+                log.warn("Could not load frame icons", e);
             }
 
             // Create the MainPanel which manages multiple sessions
