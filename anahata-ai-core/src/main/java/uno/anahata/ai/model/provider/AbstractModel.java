@@ -7,6 +7,7 @@ import java.util.List;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.GenerationRequest;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.StreamObserver;
@@ -98,20 +99,16 @@ public abstract class AbstractModel {
      * The core method for interacting with an AI model. It takes a configuration
      * object and a list of messages and returns a standardized Response.
      *
-     * @param chat the chat for which the content is being generated
-     * @param config The configuration for this specific request.
-     * @param history The list of messages forming the conversation history.
+     * @param request The generation request containing config and history.
      * @return A standardized {@link Response} object.
      */
-    public abstract Response generateContent(Chat chat, RequestConfig config, List<AbstractMessage> history);
+    public abstract Response generateContent(GenerationRequest request);
 
     /**
      * Generates content asynchronously using token streaming.
      *
-     * @param chat The chat for which the content is being generated.
-     * @param config The configuration for this specific request.
-     * @param history The list of messages forming the conversation history.
+     * @param request The generation request containing config and history.
      * @param observer The observer that will receive the streaming response chunks.
      */
-    public abstract void generateContentStream(Chat chat, RequestConfig config, List<AbstractMessage> history, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer);
+    public abstract void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer);
 }

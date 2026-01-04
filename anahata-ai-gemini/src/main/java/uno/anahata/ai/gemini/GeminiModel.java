@@ -33,6 +33,7 @@ import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
+import uno.anahata.ai.model.core.GenerationRequest;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.RequestConfig;
@@ -197,8 +198,10 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
-    public Response generateContent(Chat chat, RequestConfig config, List<AbstractMessage> history) {
+    public Response generateContent(GenerationRequest request) {
         Client client = provider.getClient();
+        RequestConfig config = request.config();
+        List<AbstractMessage> history = request.history();
 
         // 1. Adapt the anahata-ai request to the Gemini-specific request using the new OO adapter
         boolean includePruned = config.isIncludePruned();
@@ -226,6 +229,8 @@ public class GeminiModel extends AbstractModel {
             log.info("Got response from Gemini model: {}", response.toJson());
 
             // 3. Convert the Gemini response to the Anahata response using the new OO response class.
+            // Note: We pass the chat from the first message in history as a proxy.
+            Chat chat = history.get(0).getChat();
             return new GeminiResponse(gcc.toJson(), chat, getModelId(), response);
         } catch (ClientException e) {
             log.error("Exception in generateContent", e);
@@ -240,8 +245,12 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
-    public void generateContentStream(Chat chat, RequestConfig config, List<AbstractMessage> history, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer) {
+    public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer) {
         Client client = provider.getClient();
+        RequestConfig config = request.config();
+        List<AbstractMessage> history = request.history();
+        Chat chat = history.get(0).getChat();
+
         boolean includePruned = config.isIncludePruned();
         List<Content> googleHistory = history.stream()
                 .map(msg -> new GeminiContentAdapter(msg, includePruned).toGoogle())
@@ -260,6 +269,8 @@ public class GeminiModel extends AbstractModel {
             GeminiResponse lastGeminiResponse = null;
 
             for (GenerateContentResponse chunk : stream) {
+                String chunkJson = chunk.toJson();
+                
                 // The first chunk is special: it tells us how many candidates (targets) we need to track.
                 if (!started) {
                     List<Candidate> candidates = chunk.candidates().orElse(Collections.emptyList());
@@ -274,6 +285,11 @@ public class GeminiModel extends AbstractModel {
                     started = true;
                 }
 
+                // Accumulate the raw JSON chunk in each target message.
+                for (GeminiModelMessage target : targets) {
+                    target.appendRawJson(chunkJson);
+                }
+
                 // Pour the deltas from this chunk into our persistent target messages.
                 handleChunk(chunk, targets);
                 
@@ -283,14 +299,11 @@ public class GeminiModel extends AbstractModel {
                 observer.onNext(lastGeminiResponse);
             }
             
-            // FINALIZATION: When the stream is complete, we set the raw JSON of the final chunk
-            // on each target message. This enables the "Json" view in the UI.
-            // Note: This is the JSON of the last chunk, which for Gemini usually contains 
-            // the full metadata for that candidate.
+            // FINALIZATION: When the stream is complete, we set the final response object
+            // on each target message.
             if (lastGeminiResponse != null) {
                 for (GeminiModelMessage target : targets) {
                     target.setResponse(lastGeminiResponse);
-                    target.setRawJson(lastGeminiResponse.getRawJson());
                 }
             }
             
@@ -313,12 +326,6 @@ public class GeminiModel extends AbstractModel {
      * @param targets The persistent ModelMessage objects being updated.
      */
     private void handleChunk(GenerateContentResponse chunk, List<GeminiModelMessage> targets) {
-        System.out.println("handling chunk " + chunk.text());
-        try {
-        Thread.sleep(500);    
-        } catch (Exception e) {
-        }
-        
         List<Candidate> candidates = chunk.candidates().orElse(Collections.emptyList());
         
         // Iterate through each candidate delta in the chunk and apply it to the matching target.
@@ -328,33 +335,35 @@ public class GeminiModel extends AbstractModel {
             
             c.content().ifPresent(content -> content.parts().ifPresent(parts -> {
                 for (Part p : parts) {
-                    if (p.text().isPresent()) {
-                        String text = p.text().get();
-                        boolean isThought = p.thought().orElse(false);
-                        
-                        List<AbstractPart> activeParts = target.getParts();
-                        AbstractPart lastPart = activeParts.isEmpty() ? null : activeParts.get(activeParts.size() - 1);
-                        
-                        // APPEND LOGIC:
-                        // If the last part in the target is a TextPart of the same "type" (thought vs speech),
-                        // we append the new text to it. This keeps the UI rendering smooth.
-                        boolean canAppend = false;
-                        if (lastPart instanceof ModelTextPart mtp && mtp.isThought() == isThought) {
+                    byte[] sig = p.thoughtSignature().orElse(null);
+                    boolean isThought = p.thought().orElse(false);
+                    String text = p.text().orElse("");
+                    
+                    List<AbstractPart> activeParts = target.getParts();
+                    AbstractPart lastPart = activeParts.isEmpty() ? null : activeParts.get(activeParts.size() - 1);
+                    
+                    // APPEND LOGIC:
+                    // If the last part in the target is a TextPart of the same "type" (thought vs speech),
+                    // we append the new text to it. This keeps the UI rendering smooth.
+                    boolean canAppend = false;
+                    if (lastPart instanceof ModelTextPart mtp && mtp.isThought() == isThought) {
+                        if (!text.isEmpty()) {
                             mtp.appendText(text);
-                            canAppend = true;
                         }
-                        
-                        // NEW PART LOGIC:
-                        // If we can't append (e.g., the model switched from thinking to speaking),
-                        // we create a brand new part. The constructor handles self-registration to the target.
-                        if (!canAppend) {
+                        if (sig != null) {
+                            mtp.setThoughtSignature(sig); // Update signature!
+                        }
+                        canAppend = true;
+                    }
+                    
+                    // NEW PART LOGIC:
+                    // If we can't append (e.g., the model switched from thinking to speaking),
+                    // we create a brand new part, but ONLY if there is text or a signature.
+                    if (!canAppend) {
+                        if (!text.isEmpty() || sig != null) {
                             log.info("Creating new model part for " + chunk);
-                            new ModelTextPart(target, text, p.thoughtSignature().orElse(null), isThought);
+                            new ModelTextPart(target, text, sig, isThought);
                         }
-                    } else if (p.inlineData().isPresent() || p.functionCall().isPresent()) {
-                        // For non-text parts (blobs, tool calls), we use the standard conversion logic.
-                        // These are usually sent in a single chunk, not streamed token-by-token.
-                        target.toAnahataPart(p);
                     }
                 }
             }));

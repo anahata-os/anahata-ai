@@ -3,6 +3,7 @@
  */
 package uno.anahata.ai.internal;
 
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -67,7 +68,11 @@ public class TextUtils {
             return "null";
         }
         if (value instanceof byte[] bytes) {
-            return formatByteArray(bytes);
+            if (bytes.length <= 8) {
+                return formatByteArray(bytes);
+            } else {
+                return formatBase64(bytes);
+            }
         }
         int maxLength = 64;
         String s = String.valueOf(value).replace("\n", "\\n").replace("\r", "");
@@ -104,5 +109,17 @@ public class TextUtils {
                     .collect(Collectors.joining(", "));
             return String.format("[%s ... %s]", firstThree, lastThree);
         }
+    }
+    
+    /**
+     * Encodes a byte array to a Base64 string and truncates it for display.
+     * 
+     * @param data The byte array.
+     * @return A truncated Base64 string.
+     */
+    public static String formatBase64(byte[] data) {
+        if (data == null) return "null";
+        String b64 = Base64.getEncoder().encodeToString(data);
+        return formatValue(b64);
     }
 }

@@ -80,12 +80,45 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     
     /**
      * Sets the raw JSON representation of the model's response and fires a property change event.
+     * This method replaces any existing content.
+     * 
      * @param rawJson The raw JSON string.
      */
     public void setRawJson(String rawJson) {
         String oldJson = this.rawJson;
         this.rawJson = rawJson;
         getPropertyChangeSupport().firePropertyChange("rawJson", oldJson, rawJson);
+    }
+
+    /**
+     * Appends a raw JSON chunk to the existing content. If multiple chunks are
+     * appended, they are automatically wrapped in a JSON array to maintain
+     * validity for pretty-printing.
+     * 
+     * @param chunk The JSON chunk to append.
+     */
+    public void appendRawJson(String chunk) {
+        if (chunk == null || chunk.isEmpty()) {
+            return;
+        }
+        String oldJson = this.rawJson;
+        if (this.rawJson == null || this.rawJson.isEmpty()) {
+            this.rawJson = chunk;
+        } else {
+            // If it's the second chunk, start an array.
+            if (!this.rawJson.startsWith("[")) {
+                this.rawJson = "[\n" + this.rawJson + ",\n" + chunk + "\n]";
+            } else {
+                // It's already an array, append before the last ']'.
+                this.rawJson = this.rawJson.substring(0, this.rawJson.lastIndexOf("]")).trim();
+                if (this.rawJson.endsWith(",")) {
+                    this.rawJson += "\n" + chunk + "\n]";
+                } else {
+                    this.rawJson += ",\n" + chunk + "\n]";
+                }
+            }
+        }
+        getPropertyChangeSupport().firePropertyChange("rawJson", oldJson, this.rawJson);
     }
 
     /**

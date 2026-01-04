@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,7 @@ import uno.anahata.ai.AiConfig;
 public abstract class AbstractAiProvider {
     private List<String> keyPool;
     private final String providerId;
-    private int round = 0;
+    private final AtomicInteger round = new AtomicInteger(0);
     
     // Transient cache for the models
     private transient List<? extends AbstractModel> models;
@@ -131,7 +132,7 @@ public abstract class AbstractAiProvider {
         }
         
         // Round-robin key selection
-        int nextIdx = round++ % keyPool.size();
+        int nextIdx = round.getAndIncrement() % keyPool.size();
         String key = keyPool.get(nextIdx);
         log.debug("Using API key from pool (index {}). Key ends with: {}", nextIdx, key.substring(key.length() - 5));
         return key;

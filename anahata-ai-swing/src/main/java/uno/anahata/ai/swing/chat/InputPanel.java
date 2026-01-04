@@ -254,7 +254,7 @@ public class InputPanel extends JPanel {
             // Resend context (API call without a new user message)
             taskName = "Resend Context";
             backgroundTask = () -> {
-                chat.sendContextStreaming();
+                chat.sendContext();
                 return null;
             };
         } else if (!currentMessage.isEmpty()) {
@@ -266,7 +266,7 @@ public class InputPanel extends JPanel {
             resetMessage();
             
             backgroundTask = () -> {
-                chat.sendMessageStreaming(messageToSend);
+                chat.sendMessage(messageToSend);
                 return null;
             };
         } else {

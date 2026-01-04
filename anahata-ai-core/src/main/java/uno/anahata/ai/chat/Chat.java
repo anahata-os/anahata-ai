@@ -1,5 +1,5 @@
 /*
- * Licensed under the Anahata Software License (AS IS) v 108. See the LICENSE file for details. Força Barça!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.ai.chat;
 
@@ -25,6 +25,7 @@ import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
+import uno.anahata.ai.model.core.GenerationRequest;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
@@ -180,12 +181,7 @@ public class Chat implements PropertyChangeSource {
                 return;
             }
             contextManager.addMessage(message);
-            
-            if (config.isStreaming()) {
-                sendContextStreaming();
-            } else {
-                sendContext();
-            }
+            executeTurn();
         } finally {
             runningLock.unlock();
         }
@@ -203,11 +199,8 @@ public class Chat implements PropertyChangeSource {
                 log.info("Chat is busy. Cannot send context.");
                 return;
             }
-
-            setRunning(true);
-            sendToModel();
+            executeTurn();
         } finally {
-            setRunning(false);
             runningLock.unlock();
         }
     }
@@ -215,10 +208,10 @@ public class Chat implements PropertyChangeSource {
     /**
      * Prepares the request by consuming any staged messages and building the history.
      * 
-     * @return A RequestContext containing the config and history.
+     * @return A GenerationRequest containing the config and history.
      * @throws IllegalStateException if no model is selected.
      */
-    private RequestContext prepareRequest() {
+    private GenerationRequest prepareRequest() {
         if (selectedModel == null) {
             throw new IllegalStateException("A model must be selected before sending a message.");
         }
@@ -233,45 +226,59 @@ public class Chat implements PropertyChangeSource {
 
         RequestConfig requestConfig = config.getRequestConfig();
         List<AbstractMessage> history = contextManager.buildVisibleHistory();
-        return new RequestContext(requestConfig, history);
+        return new GenerationRequest(requestConfig, history);
     }
 
     /**
-     * The core method for interacting with the model. It builds the history,
-     * sends it, and processes the response, including handling retries and
-     * multiple candidates.
+     * Orchestrates a single conversation turn, handling both synchronous and
+     * streaming modes, retries, and candidate selection.
      */
-    private void sendToModel() {
+    private void executeTurn() {
+        setRunning(true);
+        try {
+            boolean turnComplete = false;
+            while (!turnComplete) {
+                turnComplete = performSingleTurn();
+            }
+        } finally {
+            setRunning(false);
+            // Atomically check and process any staged message that arrived while we were busy.
+            UserMessage staged = stagedUserMessage;
+            if (staged != null) {
+                stagedUserMessage = null;
+                sendMessage(staged);
+            }
+        }
+    }
+
+    /**
+     * Performs a single generation turn, including retries.
+     * 
+     * @return true if the conversation turn is complete, false if it should continue (e.g. tool auto-run).
+     */
+    private boolean performSingleTurn() {
         int maxRetries = config.getApiMaxRetries();
         long initialDelayMillis = config.getApiInitialDelayMillis();
         long maxDelayMillis = config.getApiMaxDelayMillis();
-        
+
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
-                RequestContext rc = prepareRequest();
-
+                GenerationRequest request = prepareRequest();
                 statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
                 log.info("Sending request to model '{}' (attempt {}/{}) with {} messages.",
-                        selectedModel.getModelId(), attempt + 1, maxRetries, rc.history().size());
+                        selectedModel.getModelId(), attempt + 1, maxRetries, request.history().size());
 
-                Response<?> response = selectedModel.generateContent(this, rc.config(), rc.history());
-                this.lastResponse = response;
-                
-                statusManager.clearApiErrors();
-
-                if (response.getCandidates().size() == 1) {
-                    chooseCandidate((AbstractModelMessage) response.getCandidates().get(0));
+                List<? extends AbstractModelMessage> candidates;
+                if (config.isStreaming()) {
+                    candidates = performStreamingTurn(request);
                 } else {
-                    log.info("Model returned multiple candidates. Pausing for user selection.");
-                    setActiveCandidates(response.getCandidates().stream()
-                            .map(c -> (AbstractModelMessage) c)
-                            .collect(Collectors.toList()));
-                    statusManager.fireStatusChanged(ChatStatus.CANDIDATE_CHOICE_PROMPT);
+                    candidates = performSyncTurn(request);
                 }
-                return;
+                
+                return handleTurnResult(candidates);
 
             } catch (Exception e) {
-                log.error("Exception in sendToModel", e);
+                log.error("Exception in performSingleTurn", e);
                 ApiErrorRecordBuilder<?, ?> errorRecordBuilder = ApiErrorRecord.builder()
                         .modelId(selectedModel.getModelId())
                         .timestamp(java.time.Instant.now())
@@ -304,82 +311,35 @@ public class Chat implements PropertyChangeSource {
                 }
             }
         }
+        return true; // Should not reach here
     }
 
     /**
-     * Sends a message and processes the response using token streaming.
+     * Performs a synchronous generation turn.
      * 
-     * @param message The user's message.
+     * @param request The generation request.
+     * @return The list of candidate messages.
      */
-    public void sendMessageStreaming(@NonNull UserMessage message) {
-        runningLock.lock();
-        try {
-            if (running) {
-                log.info("Chat is busy. Staging message for streaming.");
-                this.stagedUserMessage = message;
-                return;
-            }
-            contextManager.addMessage(message);
-            sendContextStreaming();
-        } finally {
-            runningLock.unlock();
-        }
+    private List<? extends AbstractModelMessage> performSyncTurn(GenerationRequest request) {
+        Response<?> response = selectedModel.generateContent(request);
+        this.lastResponse = response;
+        statusManager.clearApiErrors();
+        return response.getCandidates();
     }
 
     /**
-     * Sends the current context to the model using token streaming.
+     * Performs an asynchronous streaming generation turn.
+     * 
+     * @param request The generation request.
+     * @return The list of candidate messages.
      */
-    public void sendContextStreaming() {
-        runningLock.lock();
-        try {
-            if (running) {
-                log.info("Chat is busy. Cannot send context for streaming.");
-                return;
-            }
-            setRunning(true);
-            sendToModelStreaming();
-        } finally {
-            runningLock.unlock();
-        }
-    }
-
-    /**
-     * Orchestrates the asynchronous streaming interaction with the model.
-     */
-    private void sendToModelStreaming() {
-        RequestContext rc = prepareRequest();
-
-        statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
-        log.info("Starting streaming request to model '{}' with {} messages.",
-                selectedModel.getModelId(), rc.history().size());
-
-        selectedModel.generateContentStream(this, rc.config(), rc.history(), new StreamObserver<Response<? extends AbstractModelMessage>, AbstractModelMessage>() {
-            /** 
-             * Tracks the candidates received from the stream. 
-             * This is used in onComplete to finalize the turn.
-             */
-            private List<AbstractModelMessage> candidatesFromStream;
-
+    private List<? extends AbstractModelMessage> performStreamingTurn(GenerationRequest request) {
+        final List<AbstractModelMessage> result = new ArrayList<>();
+        selectedModel.generateContentStream(request, new StreamObserver<Response<? extends AbstractModelMessage>, AbstractModelMessage>() {
             @Override
             public void onStart(List<AbstractModelMessage> candidates) {
-                this.candidatesFromStream = candidates;
-                
-                if (candidates.size() == 1) {
-                    // OPTIMIZATION: If there's only one candidate, we add it to the history 
-                    // immediately. This allows the ConversationPanel to render it as it 
-                    // streams, providing a more natural experience.
-                    AbstractModelMessage candidate = candidates.get(0);
-                    log.info("On Start adding message to the context manager before: " + contextManager.getHistory().size());
-                    contextManager.addMessage(candidate);
-                    log.info("On Start added message to the context manager after: " + contextManager.getHistory().size());
-                    
-                    // We keep activeCandidates empty so the selection panel stays hidden.
-                    setActiveCandidates(Collections.emptyList());
-                } else {
-                    // If there are multiple candidates, we don't add them to history yet.
-                    // They are held in the activeCandidates list for the selection panel.
-                    setActiveCandidates(candidates);
-                }
+                result.addAll(candidates);
+                handleCandidatesStart(candidates);
             }
 
             @Override
@@ -389,32 +349,64 @@ public class Chat implements PropertyChangeSource {
 
             @Override
             public void onComplete() {
-                setRunning(false);
-                statusManager.clearApiErrors();
-                log.info("Streaming complete. {} candidates received.", candidatesFromStream != null ? candidatesFromStream.size() : 0);
-                
-                if (candidatesFromStream != null) {
-                    candidatesFromStream.forEach(c -> c.setStreaming(false));
-                    if (candidatesFromStream.size() == 1) {
-                        // Finalize the single candidate (e.g., trigger tool execution).
-                        chooseCandidate(candidatesFromStream.get(0));
-                    } else if (candidatesFromStream.size() > 1) {
-                        // Prompt the user to choose between multiple candidates.
-                        statusManager.fireStatusChanged(ChatStatus.CANDIDATE_CHOICE_PROMPT);
-                    }
-                }
+                log.info("Streaming complete. {} candidates received.", result.size());
+                result.forEach(c -> c.setStreaming(false));
             }
 
             @Override
             public void onError(Throwable t) {
-                setRunning(false);
                 log.error("Error in streaming response", t);
-                if (candidatesFromStream != null) {
-                    candidatesFromStream.forEach(c -> c.setStreaming(false));
-                }
-                statusManager.fireStatusChanged(ChatStatus.ERROR);
+                result.forEach(c -> c.setStreaming(false));
+                // Rethrow to be caught by the retry loop in performSingleTurn
+                if (t instanceof RuntimeException re) throw re;
+                throw new RuntimeException(t);
             }
         });
+        return result;
+    }
+
+    /**
+     * Handles the initial set of candidates received from a stream.
+     * 
+     * @param candidates The list of candidate messages.
+     */
+    private void handleCandidatesStart(List<? extends AbstractModelMessage> candidates) {
+        if (candidates.size() == 1) {
+            // OPTIMIZATION: If there's only one candidate, we add it to the history 
+            // immediately. This allows the ConversationPanel to render it as it 
+            // streams, providing a more natural experience.
+            AbstractModelMessage candidate = candidates.get(0);
+            contextManager.addMessage(candidate);
+            
+            // We keep activeCandidates empty so the selection panel stays hidden.
+            setActiveCandidates(Collections.emptyList());
+        } else {
+            // If there are multiple candidates, we don't add them to history yet.
+            // They are held in the activeCandidates list for the selection panel.
+            setActiveCandidates((List)candidates);
+        }
+    }
+
+    /**
+     * Handles the final result of a generation turn (sync or stream).
+     * 
+     * @param candidates The list of candidate messages.
+     * @return true if the conversation turn is complete, false if it should continue.
+     */
+    private boolean handleTurnResult(List<? extends AbstractModelMessage> candidates) {
+        statusManager.clearApiErrors();
+        if (candidates.size() == 1) {
+            // Finalize the single candidate (e.g., trigger tool execution).
+            return chooseCandidate(candidates.get(0));
+        } else if (candidates.size() > 1) {
+            // Prompt the user to choose between multiple candidates.
+            statusManager.fireStatusChanged(ChatStatus.CANDIDATE_CHOICE_PROMPT);
+            return true;
+        } else {
+            // Fallback for empty candidate list
+            statusManager.fireStatusChanged(ChatStatus.IDLE);
+            return true;
+        }
     }
 
     /**
@@ -422,8 +414,9 @@ public class Chat implements PropertyChangeSource {
      * continues the conversation if necessary.
      *
      * @param message The model message to add.
+     * @return true if the conversation turn is complete, false if it should continue.
      */
-    public void chooseCandidate(@NonNull AbstractModelMessage message) {
+    public boolean chooseCandidate(@NonNull AbstractModelMessage message) {
         // Clear active candidates and add the chosen one to the history.
         setActiveCandidates(Collections.emptyList());
         
@@ -436,11 +429,16 @@ public class Chat implements PropertyChangeSource {
             message.getToolMessage().executeAllPending();
             log.info("Tool execution complete. Sending results back to the model.");
             
-            if (config.isStreaming()) {
-                sendContextStreaming();
+            // Continue the turn loop (return false to performSingleTurn)
+            return false;
+        } else {
+            // The turn has ended. Determine the final status based on whether there are pending tool calls.
+            if (!message.getToolCalls().isEmpty()) {
+                statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
             } else {
-                sendContext();
+                statusManager.fireStatusChanged(ChatStatus.IDLE);
             }
+            return true;
         }
     }
 
@@ -589,8 +587,4 @@ public class Chat implements PropertyChangeSource {
         return propertyChangeSupport;
     }
 
-    /**
-     * Internal record to hold the context for a request.
-     */
-    private record RequestContext(RequestConfig config, List<AbstractMessage> history) {}
 }

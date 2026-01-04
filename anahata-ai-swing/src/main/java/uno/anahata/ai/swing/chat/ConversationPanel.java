@@ -4,6 +4,8 @@
 package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
+import java.awt.event.HierarchyBoundsAdapter;
+import java.awt.event.HierarchyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashMap;
@@ -53,6 +55,12 @@ public class ConversationPanel extends JPanel {
     /** The listener for history changes. */
     private EdtPropertyChangeListener historyListener;
     
+    /** 
+     * Flag indicating if the view should automatically scroll to the bottom 
+     * when content changes. 
+     */
+    private boolean autoScroll = true;
+
     /**
      * Constructs a new ConversationPanel.
      *
@@ -71,6 +79,32 @@ public class ConversationPanel extends JPanel {
         this.scrollPane.setBorder(null);
         this.scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
+
+        // --- Smart Scroll Logic ---
+        // 1. Listen for manual scroll adjustments to enable/disable auto-scroll.
+        this.scrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                autoScroll = isAtBottom();
+            }
+        });
+
+        // 2. Listen for size changes in the messages panel (e.g., during streaming).
+        // We use a HierarchyBoundsListener to detect when the panel's bounds change.
+        this.messagesPanel.addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
+            @Override
+            public void ancestorResized(HierarchyEvent e) {
+                if (autoScroll) {
+                    scrollToBottom();
+                }
+            }
+        });
+        
+        // Also listen for preferredSize changes as a fallback.
+        this.messagesPanel.addPropertyChangeListener("preferredSize", evt -> {
+            if (autoScroll) {
+                scrollToBottom();
+            }
+        });
 
         // Declarative, thread-safe binding to the history property
         this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> render());
@@ -155,6 +189,7 @@ public class ConversationPanel extends JPanel {
         messagesPanel.add(Box.createVerticalGlue());
 
         if (added) {
+            autoScroll = true; // Force auto-scroll when a new message is added
             scrollToBottom();
         }
 
@@ -189,7 +224,7 @@ public class ConversationPanel extends JPanel {
         int extent = verticalBar.getModel().getExtent();
         int maximum = verticalBar.getModel().getMaximum();
         int value = verticalBar.getModel().getValue();
-        return (value + extent) >= (maximum - 10); // 10 pixel threshold
+        return (value + extent) >= (maximum - 20); // 20 pixel threshold for better detection
     }
 
     /**

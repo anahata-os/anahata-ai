@@ -46,6 +46,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
     private SliderSpinner topKControl;
     /** Combined component for top P. */
     private SliderSpinner topPControl;
+    /** Checkbox for session-level streaming toggle. */
+    private JCheckBox streamingCheckbox;
     /** Panel for response modalities checkboxes. */
     private JPanel modalitiesPanel;
     /** Panel for server tools checkboxes. */
@@ -79,13 +81,19 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         // Column 3: Control (fill, grows)
         FormLayout layout = new FormLayout(
             "right:pref, 4dlu, fill:pref:grow",
-            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
+            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
         );
         
         JPanel mainPanel = new JPanel(layout);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         int row = 1;
+
+        // Stream Tokens (Session Level)
+        mainPanel.add(new JLabel("Stream Tokens:"), "1, " + row);
+        streamingCheckbox = new JCheckBox();
+        mainPanel.add(streamingCheckbox, "3, " + row);
+        row += 2;
 
         // Temperature
         mainPanel.add(new JLabel("Temperature:"), "1, " + row);
@@ -142,6 +150,10 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         topPControl.addChangeListener(e -> {
             config.setTopP(((Number) topPControl.getValue()).floatValue());
         });
+        
+        streamingCheckbox.addActionListener(e -> {
+            chat.getConfig().setStreaming(streamingCheckbox.isSelected());
+        });
     }
 
     /**
@@ -151,6 +163,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
      */
     private void loadConfig() {
         AbstractModel model = chat.getSelectedModel();
+        
+        streamingCheckbox.setSelected(chat.getConfig().isStreaming());
         
         float temp = config.getTemperature() != null ? config.getTemperature() : (model != null && model.getDefaultTemperature() != null ? model.getDefaultTemperature() : 1.0f);
         temperatureControl.setValue((double) temp);

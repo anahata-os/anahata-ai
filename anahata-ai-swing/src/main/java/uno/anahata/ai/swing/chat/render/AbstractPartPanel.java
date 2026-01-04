@@ -221,12 +221,13 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
 
     private void renderFooterInternal() {
         if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
+            String sig = TextUtils.formatValue(ts.getThoughtSignature());
             if (thoughtSignatureLabel == null) {
-                String sig = TextUtils.formatValue(ts.getThoughtSignature());
-                thoughtSignatureLabel = new JLabel(String.format("<html><font color='#888888' size='2'>Thought Signature: %s</font></html>", sig));
+                thoughtSignatureLabel = new JLabel();
                 thoughtSignatureLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
                 footerContainer.add(thoughtSignatureLabel);
             }
+            thoughtSignatureLabel.setText(String.format("<html><font color='#888888' size='2'>Thought Signature: %s</font></html>", sig));
         }
         
         renderFooter();
