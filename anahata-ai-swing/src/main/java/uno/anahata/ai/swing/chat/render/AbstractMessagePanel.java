@@ -119,7 +119,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         // 3. Setup Content Layout
         JXPanel mainContent = (JXPanel) getContentContainer();
         mainContent.setLayout(new BorderLayout());
-        mainContent.setOpaque(false);
+        mainContent.setOpaque(true); // Make it opaque to show the background color
+        mainContent.setBackground(getHeaderEndColor()); // Set the role-specific background
         mainContent.setBorder(BorderFactory.createEmptyBorder(5, 12, 10, 12));
 
         partsContainer = new JXPanel();
