@@ -25,6 +25,7 @@ import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
+import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.GenerationRequest;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
@@ -424,22 +425,26 @@ public class Chat implements PropertyChangeSource {
             contextManager.addMessage(message);
         }
 
-        if (message.getToolMessage().isAutoRunnable()) {
-            log.info("Auto-running {} tool calls.", message.getToolMessage().getToolResponses().size());
-            message.getToolMessage().executeAllPending();
-            log.info("Tool execution complete. Sending results back to the model.");
+        // Ensure the tool message is initialized and populated with responses for all calls.
+        AbstractToolMessage toolMessage = message.getToolMessage();
+
+        if (toolMessage.isAutoRunnable()) {
+            log.info("Auto-executing {} tool calls.", toolMessage.getToolResponses().size());
+            toolMessage.executeAllPending();
             
-            // Continue the turn loop (return false to performSingleTurn)
-            return false;
-        } else {
-            // The turn has ended. Determine the final status based on whether there are pending tool calls.
-            if (!message.getToolCalls().isEmpty()) {
-                statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
-            } else {
-                statusManager.fireStatusChanged(ChatStatus.IDLE);
+            if (config.isAutoReplyTools()) {
+                log.info("Auto-replying after tool execution.");
+                return false; // Continue loop
             }
-            return true;
         }
+
+        // The turn has ended. Determine the final status based on whether there are pending tool calls.
+        if (!message.getToolCalls().isEmpty()) {
+            statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
+        } else {
+            statusManager.fireStatusChanged(ChatStatus.IDLE);
+        }
+        return true;
     }
 
     /**
@@ -528,11 +533,11 @@ public class Chat implements PropertyChangeSource {
      */
     public double getContextWindowUsage() {
         int totalTokens = getLastTotalTokenCount();
-        int threshold = config.getTokenThreshold();
-        if (threshold <= 0) {
+        int totalThreshold = config.getTokenThreshold();
+        if (totalThreshold <= 0) {
             return 0.0;
         }
-        return (double) totalTokens / threshold;
+        return (double) totalTokens / totalThreshold;
     }
 
     /**
