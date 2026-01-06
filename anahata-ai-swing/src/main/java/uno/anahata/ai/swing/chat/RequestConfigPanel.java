@@ -46,6 +46,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
     private SliderSpinner topKControl;
     /** Combined component for top P. */
     private SliderSpinner topPControl;
+    /** Combined component for candidate count. */
+    private SliderSpinner candidateCountControl;
     /** Checkbox for session-level streaming toggle. */
     private JCheckBox streamingCheckbox;
     /** Panel for response modalities checkboxes. */
@@ -81,7 +83,7 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         // Column 3: Control (fill, grows)
         FormLayout layout = new FormLayout(
             "right:pref, 4dlu, fill:pref:grow",
-            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
+            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
         );
         
         JPanel mainPanel = new JPanel(layout);
@@ -118,6 +120,12 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         topPControl = new SliderSpinner(new SpinnerNumberModel(0.95, 0.0, 1.0, 0.05), 0, 100, 100.0);
         mainPanel.add(topPControl, "3, " + row);
         row += 2;
+        
+        // Candidate Count
+        mainPanel.add(new JLabel("Max Candidates:"), "1, " + row);
+        candidateCountControl = new SliderSpinner(new SpinnerNumberModel(1, 1, 8, 1), 1, 8, 1.0);
+        mainPanel.add(candidateCountControl, "3, " + row);
+        row += 2;
 
         // Response Modalities
         mainPanel.add(new JLabel("Response Modalities:"), "1, " + row);
@@ -151,6 +159,10 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
             config.setTopP(((Number) topPControl.getValue()).floatValue());
         });
         
+        candidateCountControl.addChangeListener(e -> {
+            config.setCandidateCount((Integer) candidateCountControl.getValue());
+        });
+        
         streamingCheckbox.addActionListener(e -> {
             chat.getConfig().setStreaming(streamingCheckbox.isSelected());
         });
@@ -180,6 +192,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         
         float topP = config.getTopP() != null ? config.getTopP() : (model != null && model.getDefaultTopP() != null ? model.getDefaultTopP() : 0.95f);
         topPControl.setValue((double) topP);
+        
+        candidateCountControl.setValue(config.getCandidateCount() != null ? config.getCandidateCount() : 1);
 
         if (model != null) {
             updateModalities(model);
