@@ -5,9 +5,14 @@ package uno.anahata.ai.swing.components;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.JEditorPane;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.Scrollable;
 import lombok.Setter;
+import uno.anahata.ai.swing.icons.CopyIcon;
 import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
@@ -29,6 +34,30 @@ public class WrappingEditorPane extends JEditorPane implements Scrollable {
         // Redispatch mouse wheel events to the parent scroll pane to ensure
         // vertical scrolling works even when the mouse is over this component.
         addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(this, e));
+        
+        // Add context menu for copying selected text
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) showPopup(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) showPopup(e);
+            }
+
+            private void showPopup(MouseEvent e) {
+                String selectedText = getSelectedText();
+                if (selectedText != null && !selectedText.isEmpty()) {
+                    JPopupMenu popup = new JPopupMenu();
+                    JMenuItem copyItem = new JMenuItem("Copy", new CopyIcon(14));
+                    copyItem.addActionListener(ae -> copy());
+                    popup.add(copyItem);
+                    popup.show(WrappingEditorPane.this, e.getX(), e.getY());
+                }
+            }
+        });
     }
 
     @Override
