@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.swing.chat.render.AbstractMessagePanel;
 import uno.anahata.ai.swing.chat.render.ModelMessagePanel;
@@ -156,7 +157,11 @@ public class ConversationPanel extends JPanel {
      * Renders the conversation view by incrementally updating the message panels.
      */
     public void render() {        
-        List<AbstractMessage> history = chat.getContextManager().getHistory();
+        // Filter out tool messages from the visible history.
+        List<AbstractMessage> history = chat.getContextManager().getHistory().stream()
+                .filter(msg -> !(msg instanceof AbstractToolMessage))
+                .collect(Collectors.toList());
+        
         log.info("Rendering history begins: " + history.size() + " messages");
 
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
