@@ -106,6 +106,7 @@ public class GeminiPartAdapter {
         AbstractToolResponse<?> anahataResponse = (AbstractToolResponse) anahataPart;
         Map<String, Object> responseMap;
         
+        /*
         // 1. Determine the JSON payload (output or error)
         if (StringUtils.isNotBlank(anahataResponse.getError())) {
             // If there's an error, the response map must contain the "error" key.
@@ -114,6 +115,15 @@ public class GeminiPartAdapter {
             // Otherwise, it was successful, and the map must contain the "output" key.
             responseMap = JacksonUtils.convertObjectToMap("output", anahataResponse.getResult());
         }
+        */
+        responseMap = JacksonUtils.convertObjectToMap(null, anahataResponse);
+        //log.info("responseMap " + responseMap);
+        Map resultMap = JacksonUtils.convertObjectToMap("result", anahataResponse.getResult());
+        //log.info("resultMap" + resultMap);
+        
+        responseMap.putAll(resultMap);
+        
+        //responseMap.put("result", );
         
         // 2. Convert attachments to FunctionResponsePart
         List<FunctionResponsePart> attachmentParts = new ArrayList<>();
@@ -124,6 +134,7 @@ public class GeminiPartAdapter {
         // 3. Build the FunctionResponse
         FunctionResponse fr = FunctionResponse.builder()
             .name(anahataResponse.getCall().getToolName())
+            .id(anahataResponse.getCall().getId())
             .response(responseMap)
             .parts(attachmentParts) // Attachments are nested here
             .build();

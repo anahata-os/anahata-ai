@@ -23,9 +23,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTextArea;
 
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.model.core.AbstractMessage;
+import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.status.ChatStatus;
+import uno.anahata.ai.status.StatusListener;
+import uno.anahata.ai.swing.icons.AutoReplyIcon;
 import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.swing.icons.RunAndSendIcon;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.ai.swing.internal.SwingTask;
 import uno.anahata.ai.swing.internal.UICapture;
@@ -53,6 +60,8 @@ public class InputPanel extends JPanel {
     private JXTextArea inputTextArea;
     /** The button to send the message. */
     private JButton sendButton;
+    /** The button to run all pending tool calls for the current turn. */
+    private JButton runAllButton;
     /** The button to attach files. */
     private JButton attachButton;
     /** The button to attach a desktop screenshot. */
@@ -84,6 +93,9 @@ public class InputPanel extends JPanel {
         this.chatPanel = chatPanel;
         this.chat = chatPanel.getChat();
         initComponents();
+        
+        // Listen for status changes to show/hide the Run All button
+        chat.getStatusManager().addListener(event -> SwingUtilities.invokeLater(this::updateRunAllButtonVisibility));
     }
 
     /**
@@ -154,11 +166,21 @@ public class InputPanel extends JPanel {
         actionButtonPanel.add(screenshotButton);
         actionButtonPanel.add(captureFramesButton);
 
+        // Panel for send and run all buttons on the east
+        JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        
+        runAllButton = new JButton("Run + Send", new RunAndSendIcon(16));
+        runAllButton.setToolTipText("Execute all pending tool calls for the current turn and send results back to the model.");
+        runAllButton.setVisible(false); // Initially hidden
+        runAllButton.addActionListener(e -> runAllPendingTools());
+        eastButtonPanel.add(runAllButton);
+
         sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage());
+        eastButtonPanel.add(sendButton);
 
         southButtonPanel.add(actionButtonPanel, BorderLayout.WEST);
-        southButtonPanel.add(sendButton, BorderLayout.EAST);
+        southButtonPanel.add(eastButtonPanel, BorderLayout.EAST);
 
         add(southButtonPanel, BorderLayout.SOUTH);
     }
@@ -169,6 +191,7 @@ public class InputPanel extends JPanel {
     public void reload() {
         this.chat = chatPanel.getChat();
         resetMessage();
+        updateRunAllButtonVisibility();
     }
 
     /**
@@ -293,6 +316,38 @@ public class InputPanel extends JPanel {
     }
 
     /**
+     * Executes all pending tool calls for the current turn and sends the results back to the model.
+     */
+    private void runAllPendingTools() {
+        setButtonsEnabled(false);
+        executeTask(
+                "Run All + Send",
+                () -> {
+                    List<AbstractMessage> history = chat.getContextManager().getHistory();
+                    if (!history.isEmpty()) {
+                        AbstractMessage last = history.get(history.size() - 1);
+                        if (last instanceof AbstractModelMessage amm) {
+                            amm.getToolMessage().executeAllPending();
+                            chat.sendContext();
+                        }
+                    }
+                    return null;
+                },
+                (result) -> {
+                    setButtonsEnabled(true);
+                },
+                (error) -> {
+                    setButtonsEnabled(true);
+                }
+        );
+    }
+
+    private void updateRunAllButtonVisibility() {
+        boolean isToolPrompt = chat.getStatusManager().getCurrentStatus() == ChatStatus.TOOL_PROMPT;
+        runAllButton.setVisible(isToolPrompt);
+    }
+
+    /**
      * Helper method to execute a SwingTask with common success/error handling.
      *
      * @param <T> The result type of the task.
@@ -347,6 +402,7 @@ public class InputPanel extends JPanel {
      */
     private void setButtonsEnabled(boolean enabled) {
         sendButton.setEnabled(enabled);
+        runAllButton.setEnabled(enabled);
         attachButton.setEnabled(enabled);
         screenshotButton.setEnabled(enabled);
         captureFramesButton.setEnabled(enabled);

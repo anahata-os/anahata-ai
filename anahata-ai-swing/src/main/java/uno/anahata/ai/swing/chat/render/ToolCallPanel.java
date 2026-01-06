@@ -145,7 +145,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         runButton = new JButton("Run", new RunIcon(16));
         runButton.addActionListener(e -> getPart().getResponse().execute());
 
-        jsonLink = new CodeHyperlink("View JSON", 
+        jsonLink = new CodeHyperlink("json", 
                 () -> "Tool Response: " + getPart().getToolName(), 
                 () -> JacksonUtils.prettyPrint(getPart().getResponse()), 
                 "json");
@@ -201,6 +201,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         // 1. Output
         if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
             outputArea.setText(response.getResult() != null ? response.getResult().toString() : "null");
+            resultsTabbedPane.setSelectedIndex(0);
         } else {
             outputArea.setText(response.getStatus() == ToolExecutionStatus.PENDING ? "Pending execution..." : "Not executed.");
         }
@@ -214,12 +215,16 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             logsBuilder.append("• ").append(log).append("\n");
         }
         logsArea.setText(logsBuilder.toString());
-
+        
         // Reactive Tab Selection
         if (response.getStatus() == ToolExecutionStatus.FAILED) {
             resultsTabbedPane.setSelectedIndex(1); // Select Error tab
         } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
-            resultsTabbedPane.setSelectedIndex(0); // Select Output tab
+            if (logsArea.getText().isEmpty()) {
+                resultsTabbedPane.setSelectedIndex(0); // Select Output tab
+            } else {
+                resultsTabbedPane.setSelectedIndex(2);
+            }
         }
     }
 
@@ -231,10 +236,13 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             feedbackField.setText(response.getUserFeedback());
         }
         
-        if (response.getStatus() == ToolExecutionStatus.PENDING) {
+        if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
+            runButton.setText("Run Again");
+            runButton.setEnabled(true);
+        } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.NOT_EXECUTED) {
             runButton.setText("Run");
             runButton.setEnabled(true);
-        } else if (response.getStatus() == ToolExecutionStatus.FAILED || response.getStatus() == ToolExecutionStatus.NOT_EXECUTED) {
+        } else if (response.getStatus() == ToolExecutionStatus.FAILED) {
             runButton.setText("Retry");
             runButton.setEnabled(true);
         } else {

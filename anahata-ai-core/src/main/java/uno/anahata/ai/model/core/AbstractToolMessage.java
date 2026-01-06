@@ -47,11 +47,10 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
      * Filters and returns only the tool response parts from this message.
      * @return A list of {@link AbstractToolResponse} parts, or an empty list if none exist.
      */
-    @SuppressWarnings("unchecked")
-    public List<AbstractToolResponse> getToolResponses() {
+    public List<AbstractToolResponse<?>> getToolResponses() {
         return getParts().stream()
                 .filter(AbstractToolResponse.class::isInstance)
-                .map(p -> (AbstractToolResponse) p)
+                .map(p -> (AbstractToolResponse<?>) p)
                 .collect(Collectors.toList());
     }
     
@@ -62,18 +61,18 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
      */
     public boolean isAutoRunnable() {
         // Condition 1: Check global configuration settings.
-        if (!getChat().getConfig().isLocalToolsEnabled() || !getChat().getConfig().isAutoReplyTools()) {
+        if (!getChat().getConfig().isLocalToolsEnabled()) {
             return false;
         }
         
-        List<AbstractToolResponse> responses = getToolResponses();
+        List<AbstractToolResponse<?>> responses = getToolResponses();
         if (responses.isEmpty()) {
             return false; // Nothing to run.
         }
         
         // Conditions 2 & 3: Check every single tool response.
-        for (AbstractToolResponse response : responses) {
-            AbstractTool tool = response.getCall().getTool();
+        for (AbstractToolResponse<?> response : responses) {
+            AbstractTool<?, ?> tool = response.getCall().getTool();
             if (tool.getPermission() != ToolPermission.APPROVE_ALWAYS || response.getStatus() != ToolExecutionStatus.PENDING) {
                 return false; // If any tool requires a prompt or is not pending, the batch is not auto-runnable.
             }
@@ -89,6 +88,6 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
     public void executeAllPending() {
         getToolResponses().stream()
             .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-            .forEach(AbstractToolResponse::execute);
+            .forEach(response -> response.execute());
     }
 }

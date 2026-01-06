@@ -36,6 +36,7 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
     private final ResponseUsageMetadata usageMetadata;
     private final Optional<String> promptFeedback;
     private final String rawRequestConfigJson;
+    private final String rawHistoryJson;
     private final String rawJson;    
     private final String modelVersion;
 
@@ -44,26 +45,36 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
      * Google GenAI response to the Anahata domain model.
      *
      * @param requestConfigJson The raw JSON of the request configuration.
+     * @param historyJson   The raw JSON of the conversation history sent in the request.
      * @param chat          The parent chat session, required for constructing model messages.
      * @param modelId       The ID of the model that generated this response.
      * @param genaiResponse The native response object from the API.
      */
-    public GeminiResponse(String requestConfigJson, Chat chat, String modelId, GenerateContentResponse genaiResponse) {
+    public GeminiResponse(String requestConfigJson, String historyJson, Chat chat, String modelId, GenerateContentResponse genaiResponse) {
         this.rawRequestConfigJson = requestConfigJson;
+        this.rawHistoryJson = historyJson;
         this.genaiResponse = genaiResponse;        
         this.rawJson = genaiResponse.toJson();
         this.modelVersion = genaiResponse.modelVersion().orElse(modelId);
         
-        // --- 1. Convert Candidates ---
-        // Use orElse(Collections.emptyList()) to safely handle streaming chunks that might not have candidates.
-        this.candidates = genaiResponse.candidates().orElse(Collections.emptyList()).stream()
-            .map(candidate -> new GeminiModelMessage(chat, modelVersion, candidate, this))
-            .collect(Collectors.toList());
-
-        // --- 2. Convert Usage Metadata ---
+        // --- 1. Convert Usage Metadata ---
         this.usageMetadata = genaiResponse.usageMetadata()
             .map(this::convertUsageMetadata)
             .orElse(ResponseUsageMetadata.builder().build()); // Default empty metadata
+
+        // --- 2. Convert Candidates ---
+        List<Candidate> googleCandidates = genaiResponse.candidates().orElse(Collections.emptyList());
+        this.candidates = googleCandidates.stream()
+            .map(candidate -> {
+                GeminiModelMessage msg = new GeminiModelMessage(chat, modelVersion, candidate, this);
+                // Fallback: If candidate doesn't have its own token count and there's only one candidate,
+                // use the total candidatesTokenCount from usageMetadata.
+                if (msg.getTokenCount() <= 0 && googleCandidates.size() == 1) {
+                    msg.setTokenCount(usageMetadata.getCandidatesTokenCount());
+                }
+                return msg;
+            })
+            .collect(Collectors.toList());
 
         // --- 3. Convert Prompt Feedback ---
         this.promptFeedback = genaiResponse.promptFeedback()

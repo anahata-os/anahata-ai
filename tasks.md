@@ -1,26 +1,23 @@
-# Anahata AI V2 - Consolidated Task List (Core & Swing Modules)
+# Anahata AI V2 Mission Board
 
-This document consolidates all active and pending tasks for the core framework and its Swing UI module.
+This board tracks the high-priority tactical goals for the V2 architecture migration and refinement.
 
-## High Priority / Core Framework
+## 🎯 Active Mission: V2 UI & Tooling Refinement
 
-- [ ] token streaming doesnt render the model message until the stream finishes
-- [ ] add tool execution panels (tool calls and responses) needs extensive discussion before starting
-- [ ] Session Management: Implement the "Save" and "Load Session" buttons
+### 🟡 In Progress
+- [ ] **Integrated Tool Execution Rendering**: Implement a left-to-right layout where tool responses are displayed next to their corresponding tool calls within the model message, eliminating the separate tool message panel.
+
+### 🔴 Backlog
+- [ ] **Billed Tokens Display**: Test if billed tokens are correctly shown in the model message headers.
+- [ ] **Live Sessions UI**: Change live sessions to show sessions in a tabbed pane (rather than in a stack pane).
+- [ ] **GLM 4.7 Provider**: Implement the V2 adapter for Zhipu AI's GLM 4.7.
+- [ ] **OpenAI Provider**: Implement the V2 adapter for OpenAI.
+- [ ] **Anthropic Provider**: Implement the V2 adapter for Anthropic.
 
 
-## UI / Swing Module Tasks
+### 🧊 Hanging in Limbo (API Limitations)
+- [ ] **Multi-Candidate Selection**: Refine the `CandidateSelectionPanel` to handle grounding metadata and token counts per candidate. (Gemini API currently supports only 1 candidate).
+- [ ] **Test Multi-Candidate Selection**: Verify the UI and logic for handling multiple model responses.
 
-
-
-## Research & Technical Debt
-
-- [ ] Research Shared Schema Definitions for Token Optimization
-- [ ] Improve Binary File Handling in `LocalFiles` Tool
-- [ ] Implement FailureTracker in V2 ToolManager
-- [ ] Implement Asynchronous Job Execution for V2 Tools
-- [ ] Live Workspace: Implement the functionality for the "Live Workspace" button
-- [ ] Flesh out `ToolsPanel` details (schemas, logging)
-- [ ] Context Heatmap
-- [ ] Api Keys editor
-- [ ] **Report Bug Capability:** Implement a feature to allow users to report bugs directly from the application, including relevant context.
+---
+*Last Updated: Mon Jan 05 11:45:00 CET 2026*

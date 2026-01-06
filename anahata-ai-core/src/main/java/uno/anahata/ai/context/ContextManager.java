@@ -21,6 +21,7 @@ import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RagMessage;
+import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.model.resource.AbstractResource;
 import uno.anahata.ai.status.ChatStatusProvider;
 
@@ -164,14 +165,25 @@ public class ContextManager implements PropertyChangeSource {
     public synchronized void addMessage(AbstractMessage message) {
 
         addMessageInternal(message);
-        if (message instanceof AbstractModelMessage) {
-            AbstractModelMessage amm = (AbstractModelMessage) message;
-            if (!amm.getToolMessage().getParts().isEmpty()) {
-                addMessageInternal(amm.getToolMessage());
-            }
-        }
-
+        
         hardPrune();
+    }
+    
+    /**
+     * Checks it the model message has an associated tool message and adds it to the history.
+     * 
+     * @param modelMessage - the model message
+     * @throws IllegalStateException if the model message doesnt have an associated tool message.
+     */
+    public synchronized void ensureToolMessageFolllowsModelMessage(AbstractModelMessage modelMessage) {
+        if (modelMessage.getToolMessage() == null) {
+            throw new IllegalStateException("Model message does not contain a tool message");
+        }
+        
+        if (history.contains(modelMessage) && !history.contains(modelMessage.getToolMessage())) {
+            //insert it exactly after the model message
+            history.add(history.indexOf(modelMessage) + 1, modelMessage.getToolMessage());
+        } 
     }
 
     /**
@@ -186,8 +198,14 @@ public class ContextManager implements PropertyChangeSource {
             part.setSequentialId(partIdCounter.incrementAndGet());
         }
         history.add(message);
+        if (message instanceof AbstractModelMessage amm) {
+            if (amm.getToolMessage() != null) {//its got tool calls
+                ensureToolMessageFolllowsModelMessage(amm);
+            }
+        }
+        
         log.info("Added message {} to history size: {} firing event", message, history.size());
-        propertyChangeSupport.firePropertyChange("history", null, history);        
+        propertyChangeSupport.firePropertyChange("history", null, history);
     }
     
     /**

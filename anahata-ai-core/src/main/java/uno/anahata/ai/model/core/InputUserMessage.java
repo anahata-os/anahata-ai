@@ -49,10 +49,11 @@ public class InputUserMessage extends UserMessage {
      * @param text The new text content.
      */
     public void setText(String text) {
-        if (text == null || text.trim().isEmpty()) {
+        if (text == null || text.trim().isEmpty()) {            
             if (editableTextPart != null) {
-                editableTextPart.remove();
-                editableTextPart = null;
+                //causing a npe
+                //editableTextPart.remove();
+                //editableTextPart = null;
             }
         } else {
             if (editableTextPart == null) {

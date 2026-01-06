@@ -18,6 +18,7 @@ import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
+import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
@@ -59,9 +60,10 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
         this.footerActionsPanel.add(this.finishLabel, BorderLayout.WEST);
         
         // Use a lazy supplier for the JSON content and title.
+        // CodeHyperlink handles pretty-printing internally for "json" language.
         this.jsonLink = new CodeHyperlink("Json", 
                 () -> "Model Message #" + message.getSequentialId(), 
-                () -> JacksonUtils.prettyPrintJsonString(message.getRawJson()), 
+                () -> message.getRawJson(), 
                 "json");
         this.footerActionsPanel.add(this.jsonLink, BorderLayout.EAST);
         
@@ -72,6 +74,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
         new EdtPropertyChangeListener(this, message, "rawJson", evt -> updateRawJsonVisibility());
         new EdtPropertyChangeListener(this, message, "tokenCount", evt -> updateHeaderInfoText());
         new EdtPropertyChangeListener(this, message, "finishReason", evt -> updateFinishReason());
+        new EdtPropertyChangeListener(this, message, "groundingMetadata", evt -> render());
         
         // Initial sync
         updateRawJsonVisibility();
@@ -110,9 +113,22 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
     @Override
     protected void renderFooter() {
         // Grounding metadata is usually available at the end or as a separate update.
-        if (message.getGroundingMetadata() != null && groundingPanel == null) {
-            groundingPanel = new GroundingMetadataPanel(chatPanel, message.getGroundingMetadata());
-            footerContainer.add(groundingPanel, 0); // Add at the top of footer
+        if (message.getGroundingMetadata() != null) {
+            if (groundingPanel == null) {
+                groundingPanel = new GroundingMetadataPanel(chatPanel, message.getGroundingMetadata());
+                footerContainer.add(groundingPanel, 0); // Add at the top of footer
+            } else {
+                // If it already exists, we should ideally update it. 
+                // For now, let's just replace it if the metadata object is different.
+                if (groundingPanel.getMetadata() != message.getGroundingMetadata()) {
+                    footerContainer.remove(groundingPanel);
+                    groundingPanel = new GroundingMetadataPanel(chatPanel, message.getGroundingMetadata());
+                    footerContainer.add(groundingPanel, 0);
+                }
+            }
+        } else if (groundingPanel != null) {
+            footerContainer.remove(groundingPanel);
+            groundingPanel = null;
         }
     }
 
@@ -122,6 +138,8 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
             return new TextPartPanel(chatPanel, modelTextPart);
         } else if (part instanceof ModelBlobPart modelBlobPart) {
             return new BlobPartPanel(chatPanel, modelBlobPart);
+        } else if (part instanceof AbstractToolCall toolCall) {
+            return new ToolCallPanel(chatPanel, toolCall);
         }
         return super.createPartPanel(part);
     }

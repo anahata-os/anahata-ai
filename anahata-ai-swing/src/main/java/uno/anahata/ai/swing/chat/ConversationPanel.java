@@ -106,7 +106,7 @@ public class ConversationPanel extends JPanel {
                     log.info("[Scroll] User dragged scrollbar UP, disabling autoScroll");
                     autoScroll = false;
                 } else if (!autoScroll && atBottom) {
-                    log.info("[Scroll] User dragged scrollbar to BOTTOM, re-enabling autoScroll");
+                    //log.info("[Scroll] User dragged scrollbar to BOTTOM, re-enabling autoScroll");
                     autoScroll = true;
                 }
             } else {

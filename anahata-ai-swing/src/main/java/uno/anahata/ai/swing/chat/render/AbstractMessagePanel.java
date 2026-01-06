@@ -196,10 +196,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         sb.append(getHeaderSuffix());
         sb.append("</html>");
         
-        String newTitle = sb.toString();
-        if (!newTitle.equals(getTitle())) {
-            setTitle(newTitle);
-        }
+        setTitle(sb.toString());
     }
 
     /**
@@ -249,10 +246,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             .collect(Collectors.toList());
         
         for (AbstractPart removedPart : toRemove) {
-            AbstractPartPanel panel = cachedPartPanels.remove(removedPart);
-            if (panel != null) {
-                partsContainer.remove(panel);
-            }
+            AbstractMessagePanel.this.cachedPartPanels.remove(removedPart);
+            partsContainer.remove(cachedPartPanels.get(removedPart));
         }
 
         // 2. Ensure all parts have panels and are in the correct order
