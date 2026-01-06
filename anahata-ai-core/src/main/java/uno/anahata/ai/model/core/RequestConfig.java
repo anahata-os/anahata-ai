@@ -38,6 +38,9 @@ public class RequestConfig {
     /** The top P parameter. */
     private Float topP;
     
+    /** The number of response variations to generate. */
+    private Integer candidateCount = 1;
+
     /** The list of response modalities requested for this specific request. */
     private List<String> responseModalities = new ArrayList<>();
 
