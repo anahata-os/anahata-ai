@@ -75,6 +75,8 @@ public class StatusPanel extends JPanel {
     private JLabel tokenDetailsLabel; 
     /** Hyperlink to view the raw JSON request configuration. */
     private CodeHyperlink rawJsonRequestConfigLink; 
+    /** Hyperlink to view the conversation history as JSON. */
+    private CodeHyperlink historyJsonLink;
     /** Hyperlink to view the raw JSON response. */
     private CodeHyperlink rawJsonResponseLink; 
     /** Toggle button for sound notifications. */
@@ -150,46 +152,55 @@ public class StatusPanel extends JPanel {
         
         add(row1Panel);
 
-        // --- Row 2 (Middle) --- 
+        // --- Row 2 (Links) --- 
         JPanel row2Panel = new JPanel(new BorderLayout(10, 0));
         row2Panel.setAlignmentX(LEFT_ALIGNMENT);
-        row2Panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        row2Panel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
 
-        JPanel tokenAndJsonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JPanel linksPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         
         rawJsonRequestConfigLink = new CodeHyperlink("Request", 
                 () -> "Raw JSON Request", 
                 () -> chat.getLastResponse().map(Response::getRawRequestConfigJson).orElse(""), 
                 "json");
-        tokenAndJsonPanel.add(rawJsonRequestConfigLink);
+        linksPanel.add(rawJsonRequestConfigLink);
+
+        historyJsonLink = new CodeHyperlink("History",
+                () -> "Conversation History JSON",
+                () -> chat.getLastResponse().map(Response::getRawHistoryJson).orElse(""),
+                "json");
+        linksPanel.add(historyJsonLink);
 
         rawJsonResponseLink = new CodeHyperlink("Response", 
                 () -> "Raw JSON Response", 
-                () -> chat.getLastResponse().map(r -> JacksonUtils.prettyPrintJsonString(r.getRawJson())).orElse(""), 
+                () -> chat.getLastResponse().map(r -> r.getRawJson()).orElse(""), 
                 "json");
-        tokenAndJsonPanel.add(rawJsonResponseLink);
+        linksPanel.add(rawJsonResponseLink);
 
-        tokenDetailsLabel = new JLabel();
-        tokenAndJsonPanel.add(tokenDetailsLabel);
-
-        row2Panel.add(tokenAndJsonPanel, BorderLayout.WEST);
-
+        row2Panel.add(linksPanel, BorderLayout.WEST);
         row2Panel.add(audioPlaybackPanel, BorderLayout.EAST);
         
         add(row2Panel);
 
-        // --- Row 3 (Bottom-Middle) --- 
-        JPanel responseDetailsPanel = new JPanel();
-        responseDetailsPanel.setLayout(new BoxLayout(responseDetailsPanel, BoxLayout.X_AXIS));
-        responseDetailsPanel.setAlignmentX(LEFT_ALIGNMENT);
-        responseDetailsPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        // --- Row 3 (Token Details) ---
+        JPanel row3Panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        row3Panel.setAlignmentX(LEFT_ALIGNMENT);
+        tokenDetailsLabel = new JLabel();
+        row3Panel.add(tokenDetailsLabel);
+        add(row3Panel);
+
+        // --- Row 4 (Block Reason) --- 
+        JPanel row4Panel = new JPanel();
+        row4Panel.setLayout(new BoxLayout(row4Panel, BoxLayout.X_AXIS));
+        row4Panel.setAlignmentX(LEFT_ALIGNMENT);
+        row4Panel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
 
         blockReasonLabel = new JLabel();
         blockReasonLabel.setForeground(Color.RED.darker());
-        responseDetailsPanel.add(blockReasonLabel);
-        responseDetailsPanel.add(Box.createHorizontalGlue());
+        row4Panel.add(blockReasonLabel);
+        row4Panel.add(Box.createHorizontalGlue());
 
-        add(responseDetailsPanel);
+        add(row4Panel);
 
         apiErrorsPanel = new JPanel();
         apiErrorsPanel.setAlignmentX(LEFT_ALIGNMENT);
@@ -264,6 +275,7 @@ public class StatusPanel extends JPanel {
 
         rawJsonResponseLink.setVisible(false);
         rawJsonRequestConfigLink.setVisible(false);
+        historyJsonLink.setVisible(false);
         blockReasonLabel.setVisible(false);
         tokenDetailsLabel.setVisible(false);
 
@@ -303,6 +315,7 @@ public class StatusPanel extends JPanel {
 
             rawJsonResponseLink.setVisible(true);
             rawJsonRequestConfigLink.setVisible(true);
+            historyJsonLink.setVisible(true);
             
             tokenDetailsLabel.setVisible(true);
 
