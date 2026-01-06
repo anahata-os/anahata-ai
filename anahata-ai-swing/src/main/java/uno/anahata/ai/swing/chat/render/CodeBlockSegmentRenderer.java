@@ -5,18 +5,19 @@ package uno.anahata.ai.swing.chat.render;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dialog;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Window;
 import java.util.Objects;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JEditorPane;
-import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 import javax.swing.text.EditorKit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
+import uno.anahata.ai.swing.icons.CopyIcon;
 import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
@@ -78,8 +80,10 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                     EditorKit kit = editorKitProvider.getEditorKitForLanguage(language);
                     if (kit != null) {
                         JEditorPane codeEditor = new JEditorPane();
-                        codeEditor.setEditable(true);
+                        codeEditor.setEditable(false); 
                         codeEditor.setEditorKit(kit);
+                        codeEditor.setOpaque(false);
+                        codeEditor.setBackground(new Color(0,0,0,0));
                         codeEditor.getDocument().putProperty("mimeType", kit.getContentType());
                         log.info("codeEditor.getDocument().putProperty(mimeType, {}); for '{}'.", kit.getContentType(), language);
                         innerComponent = codeEditor;
@@ -94,18 +98,52 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 innerComponent = createRSyntaxTextArea(currentContent, language);
             }
 
-            // Wrap in a scroll pane for horizontal scrolling
+            // --- Robust Header Approach (BorderLayout) ---
+            JPanel container = new JPanel(new BorderLayout());
+            container.setOpaque(false);
+            container.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
+            
+            // 1. The Header Panel (North)
+            // Use a semi-transparent background to hint at the language and provide a home for the button
+            JPanel headerPanel = new JPanel(new BorderLayout());
+            headerPanel.setOpaque(true);
+            headerPanel.setBackground(new Color(240, 240, 240, 180)); 
+            headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(210, 210, 210)));
+            
+            JPanel leftHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+            leftHeaderPanel.setOpaque(false);
+
+            JLabel langLabel = new JLabel((language != null ? language.toUpperCase() : "CODE"));
+            langLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
+            langLabel.setForeground(new Color(120, 120, 120));
+            leftHeaderPanel.add(langLabel);
+
+            JButton copyButton = new JButton("Copy", new CopyIcon(12));
+            copyButton.setToolTipText("Copy Code to Clipboard");
+            copyButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            copyButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
+            copyButton.setFocusPainted(false);
+            copyButton.addActionListener(e -> SwingUtils.copyToClipboard(currentContent));
+            leftHeaderPanel.add(copyButton);
+            
+            headerPanel.add(leftHeaderPanel, BorderLayout.WEST);
+            
+            container.add(headerPanel, BorderLayout.NORTH);
+            
+            // 2. The ScrollPane (Center)
             JScrollPane scrollPane = new JScrollPane(innerComponent);
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+            scrollPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             scrollPane.setOpaque(false);
             scrollPane.getViewport().setOpaque(false);
             
             // Redispatch mouse wheel events to the parent scroll pane
             scrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(scrollPane, e));
             
-            this.component = scrollPane;
+            container.add(scrollPane, BorderLayout.CENTER);
+
+            this.component = container;
             changed = true; 
         }
 
@@ -116,7 +154,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             } else if (innerComponent instanceof RSyntaxTextArea syntaxTextArea) {
                 syntaxTextArea.setText(currentContent);
             }
-            contentRendered(); // Mark content as rendered
+            contentRendered(); 
         }
         return changed;
     }
@@ -131,16 +169,18 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
     private JComponent createRSyntaxTextArea(String code, String language) {
         RSyntaxTextArea textArea = new RSyntaxTextArea(code);
         textArea.setSyntaxEditingStyle(mapLanguageToSyntaxStyle(language));
-        textArea.setEditable(true);
-        textArea.setLineWrap(false); // Disable line wrap to allow horizontal scrolling
+        textArea.setEditable(false); 
+        textArea.setLineWrap(false); 
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
-        textArea.setTabSize(4); // Set tab size to 4 for better indentation
+        textArea.setTabSize(4); 
+        textArea.setHighlightCurrentLine(false); 
         
-        // Use theme colors if possible, otherwise defaults
-        textArea.setBackground(new java.awt.Color(245, 245, 245));
+        // Make it transparent to show message background
+        textArea.setOpaque(false);
+        textArea.setBackground(new Color(0, 0, 0, 0));
         textArea.setFont(new java.awt.Font(Font.MONOSPACED, java.awt.Font.PLAIN, 13));
-
+        
         return textArea;
     }
 
@@ -169,24 +209,11 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
         };
     }
 
-    /**
-     * Determines if this renderer can handle the given segment descriptor.
-     * A {@code CodeBlockSegmentRenderer} handles {@link TextSegmentType#CODE} descriptors
-     * with a matching language.
-     *
-     * @param descriptor The {@link TextSegmentDescriptor} to check.
-     * @return True if the descriptor's type is {@link TextSegmentType#CODE} and the language matches, false otherwise.
-     */
     @Override
     public boolean matches(TextSegmentDescriptor descriptor) {
         return descriptor.type() == TextSegmentType.CODE && Objects.equals(language, descriptor.language());
     }
 
-    /**
-     * Returns the JComponent managed by this renderer.
-     *
-     * @return The JComponent (the JScrollPane).
-     */
     @Override
     public JComponent getComponent() {
         return component;
