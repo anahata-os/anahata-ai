@@ -41,15 +41,20 @@ public abstract class Response<T extends AbstractModelMessage> {
     public abstract int getTotalTokenCount();
     
     /**
-     * Gets the total number of tokens for the entire interaction (prompt + all candidates).
-     * @return The total token count.
+     * Gets the raw JSON representation of the entire response object.
+     * @return The raw JSON string.
      */
     public abstract String getRawJson();
     
     /**
-     * The request config raw json object used for this response.
-     * 
-     * @return The total token count.
+     * Gets the raw JSON representation of the request configuration used for this response.
+     * @return The raw JSON string.
      */
     public abstract String getRawRequestConfigJson();
+
+    /**
+     * Gets the raw JSON representation of the conversation history sent in the request.
+     * @return The raw JSON string.
+     */
+    public abstract String getRawHistoryJson();
 }
