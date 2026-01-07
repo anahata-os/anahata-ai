@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.context.system.AbstractContextProvider;
+import uno.anahata.ai.context.AbstractContextProvider;
 import uno.anahata.ai.model.core.RagMessage;
 
 /**

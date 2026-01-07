@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.ai.internal.TextUtils;
 import uno.anahata.ai.model.core.AbstractPart;
 
@@ -94,6 +95,18 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         getPropertyChangeSupport().firePropertyChange("logs", null, logs);
     }
     
+    /**
+     * Adds a log message to this response, which can be displayed to the user.
+     * @param message The log message.
+     */
+    /**
+     * Converts a exception to a string and adds it to the error field.
+     * 
+     * @param t 
+     */
+    public void addError(Throwable t) {
+        addError(ExceptionUtils.getStackTrace(t));
+    }
     /**
      * Adds a log message to this response, which can be displayed to the user.
      * @param message The log message.

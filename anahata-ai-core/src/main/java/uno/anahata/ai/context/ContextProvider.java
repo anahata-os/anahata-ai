@@ -61,4 +61,11 @@ public interface ContextProvider {
      * @throws Exception if an error occurs during context generation.
      */
     void populateMessage(RagMessage ragMessage) throws Exception;
+    
+    public default String getHeader() {
+        return "Context Provider Id:**" + getId() + "**\n"
+                + "Name:" + getName()+ "\n"
+                + "Description:" + getDescription()+ "\n"
+                + "Enabled:" + isEnabled();
+    }
 }

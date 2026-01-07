@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.ai.context.system;
+package uno.anahata.ai.context;
 
 import java.util.List;
 import lombok.Getter;

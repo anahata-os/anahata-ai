@@ -72,7 +72,7 @@ public class ChatConfig {
     private boolean serverToolsEnabled = false;
 
     /** If true, the chat loop will automatically re-prompt the model after executing tools. */
-    private boolean autoReplyTools = false;
+    private boolean autoReplyTools = true;
 
     /** If true, token streaming is enabled for model responses. */
     private boolean streaming = true;

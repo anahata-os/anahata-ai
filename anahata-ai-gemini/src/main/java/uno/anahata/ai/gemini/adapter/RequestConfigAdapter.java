@@ -2,6 +2,7 @@
 package uno.anahata.ai.gemini.adapter;
 
 import com.google.genai.types.ComputerUse;
+import com.google.genai.types.Content;
 import com.google.genai.types.EnterpriseWebSearch;
 import com.google.genai.types.FileSearch;
 import com.google.genai.types.FunctionCallingConfig;
@@ -11,10 +12,12 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GoogleMaps;
 import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.GoogleSearchRetrieval;
+import com.google.genai.types.Part;
 import com.google.genai.types.ThinkingConfig;
 import com.google.genai.types.Tool;
 import com.google.genai.types.ToolCodeExecution;
 import com.google.genai.types.ToolConfig;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -52,6 +55,17 @@ public final class RequestConfigAdapter {
 
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
         
+        if (!anahataConfig.getSystemInstructions().isEmpty()) {
+            List<Part> parts = new ArrayList<>();
+            for (String si : anahataConfig.getSystemInstructions()) {
+               parts.add(Part.fromText(si));
+            }
+            
+            //builder.systemInstruction(Content.builder().role("system").parts(anahataConfig.getSystemInstructions().stream().map(p -> Part.fromText(p))));
+            Content sysInstContet = Content.builder().role("system").parts(parts).build();
+            builder.systemInstruction(sysInstContet);
+        }
+        
         List<String> modalities = anahataConfig.getResponseModalities();
         if (modalities != null && !modalities.isEmpty()) {
             builder.responseModalities(modalities);
@@ -84,9 +98,8 @@ public final class RequestConfigAdapter {
                 Tool tool = Tool.builder().functionDeclarations(declarations).build();
                 builder.tools(tool);
                 ToolConfig tc = ToolConfig.builder()
-                        /*
                         .functionCallingConfig(FunctionCallingConfig.builder()
-                                .mode(FunctionCallingConfigMode.Known.AUTO))*/.build();
+                                .mode(FunctionCallingConfigMode.Known.VALIDATED)).build();
                 builder.toolConfig(tc);
             }
         } else if (anahataConfig.isServerToolsEnabled()) {

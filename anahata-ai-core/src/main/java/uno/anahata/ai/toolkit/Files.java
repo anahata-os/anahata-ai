@@ -57,6 +57,7 @@ public class Files extends JavaToolkitInstance {
                 log.error("Exception loading text file resource", e);
                 log(ExceptionUtils.getStackTrace(e));
                 errors.add(e.getMessage());
+                getResponse().addError(ExceptionUtils.getStackTrace(e));
             }
         }
         if (!errors.isEmpty()) {

@@ -3,8 +3,16 @@ package uno.anahata.ai.resource;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.context.AbstractContextProvider;
+import uno.anahata.ai.context.ContextPosition;
+import uno.anahata.ai.context.ContextProvider;
+import uno.anahata.ai.model.core.RagMessage;
+import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.resource.AbstractResource;
 
 /**
@@ -14,7 +22,13 @@ import uno.anahata.ai.model.resource.AbstractResource;
  *
  * @author anahata-ai
  */
-public class ResourceManager {
+@Slf4j
+public class ResourceManager extends AbstractContextProvider{
+
+    public ResourceManager() {
+        super("resource-manager", "Resource Manager", "Central repository for all resources in context");
+    }
+    
 
     /**
      * A map of all tracked resources by resource id.
@@ -60,4 +74,25 @@ public class ResourceManager {
     public Collection<AbstractResource> getResources() {
         return Collections.unmodifiableCollection(resources.values());
     }
+
+    @Override
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
+        return Collections.singletonList("The resource manager contains a reference to all resources in context");
+    }
+
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        for (AbstractResource resource : getResources()) {
+            try {
+                if (resource.getContextPosition() == ContextPosition.PROMPT_AUGMENTATION) {
+                    // Delegate rendering to the resource itself
+                    resource.populate(ragMessage);
+                }
+            } catch (Exception e) {
+                log.error("Error processing managed resource {} for prompt augmentation", resource.getName(), e);
+            }
+        }
+    }
+    
+    
 }

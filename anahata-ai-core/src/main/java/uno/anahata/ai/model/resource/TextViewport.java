@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.resource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -33,6 +34,7 @@ public class TextViewport {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Cached Process Results">
+    @JsonIgnore
     private String processedText;
     private long totalChars;
     private int totalLines;

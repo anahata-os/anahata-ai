@@ -46,7 +46,7 @@ public class SwingMain {
         log.info("After passing command line args, selected model: " + chat.getSelectedModel());
 
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Anahata AI Assistant");
+            JFrame frame = new JFrame("Anahata ASI");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setPreferredSize(new Dimension(1200, 900));
             

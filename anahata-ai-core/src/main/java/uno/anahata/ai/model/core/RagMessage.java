@@ -17,7 +17,7 @@ public class RagMessage extends UserMessage {
 
     public RagMessage(Chat chat) {
         super(chat);
-        new TextPart(this, "**RAG Message (Live Workspace)**");
+        new TextPart(this, "**RAG Message (Live Workspace)**\n\n This message is dynamically generated at runtime (not written by the user) and populated by all enabled context providers after tool execution");
     }
     
 

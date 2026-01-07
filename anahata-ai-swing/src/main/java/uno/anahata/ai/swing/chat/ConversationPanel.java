@@ -232,7 +232,7 @@ public class ConversationPanel extends JPanel {
         
         // Use a slightly larger threshold (40px) to account for layout jitter during streaming.
         boolean atBottom = (value + extent) >= (maximum - 40);
-        log.info("[Scroll] isAtBottom: value={}, extent={}, maximum={}, result={}", value, extent, maximum, atBottom);
+        //log.info("[Scroll] isAtBottom: value={}, extent={}, maximum={}, result={}", value, extent, maximum, atBottom);
         return atBottom;
     }
 

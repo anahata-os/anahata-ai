@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.MouseWheelEvent;
 import java.util.List;
 import java.util.Map;
 import javax.swing.BorderFactory;
@@ -36,6 +37,7 @@ import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.icons.RunIcon;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
  * A specialized panel for rendering an {@link AbstractToolCall} and its associated
@@ -91,7 +93,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     }
 
     private void initComponents() {
-        getCentralContainer().setLayout(new MigLayout("fill, insets 0", "[grow]", "[grow][]"));
+        getCentralContainer().setLayout(new MigLayout("fill, insets 0", "[grow]", "[grow][grow][]"));
 
         // --- Split Pane ---
         argsPanel = new JPanel(new MigLayout("fillx, insets 5", "[][grow]"));
@@ -103,19 +105,29 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         errorArea = createTextArea(chatConfig.getTheme().getToolErrorFg(), chatConfig.getTheme().getToolErrorBg());
         logsArea = createTextArea(chatConfig.getTheme().getToolLogsFg(), chatConfig.getTheme().getToolLogsBg());
 
-        resultsTabbedPane.addTab("Output", new JScrollPane(outputArea));
-        resultsTabbedPane.addTab("Error", new JScrollPane(errorArea));
-        resultsTabbedPane.addTab("Logs", new JScrollPane(logsArea));
+        JScrollPane outputScrollPane = new JScrollPane(outputArea);
+        outputScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(outputScrollPane, e));
+        resultsTabbedPane.addTab("Output", outputScrollPane);
 
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(argsPanel), resultsTabbedPane);
-        splitPane.setDividerLocation(400);
+        JScrollPane errorScrollPane = new JScrollPane(errorArea);
+        errorScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(errorScrollPane, e));
+        resultsTabbedPane.addTab("Error", errorScrollPane);
+
+        JScrollPane logsScrollPane = new JScrollPane(logsArea);
+        logsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(logsScrollPane, e));
+        resultsTabbedPane.addTab("Logs", logsScrollPane);
+
+        // Directly add argsPanel to the split pane, no JScrollPane wrapper
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, argsPanel, resultsTabbedPane);
+        splitPane.setResizeWeight(0.5); // Give equal weight to both sides initially
         splitPane.setOpaque(false);
         splitPane.setBorder(null);
+        splitPane.setOneTouchExpandable(true); // Enable one-touch expandable buttons
         
         getCentralContainer().add(splitPane, "grow, wrap");
 
         // --- Bottom Control Bar ---
-        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]"));
+        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][][grow][]"));
         controlBar.setOpaque(false);
         controlBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
 
@@ -165,6 +177,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         AbstractTool<?, ?> tool = call.getTool();
         Map<String, Object> args = call.getArgs();
         
+        int row = 0; // Keep track of the current row for MigLayout
         for (Map.Entry<String, Object> entry : args.entrySet()) {
             String paramName = entry.getKey();
             Object value = entry.getValue();
@@ -175,26 +188,44 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                     .findFirst()
                     .orElse("");
 
-            argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "top");
-            
             String valStr = (value instanceof String s) ? s : JacksonUtils.prettyPrint(value);
+
+            // Determine if the argument is 'large' and should have its name above the value
+            boolean isLargeArgument = (rendererId != null && !rendererId.isEmpty()) || 
+                                      (valStr.length() > 100 || valStr.contains("\n"));
+
+            if (isLargeArgument) {
+                // Large argument: Name above value, spanning both columns, then wrap
+                argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row + ", span 2, wrap");
+                row++; // Increment row for the value
+            } else {
+                // Short argument: Name beside value
+                argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row); // Name in first column
+            }
 
             if (rendererId != null && !rendererId.isEmpty()) {
                 CodeBlockSegmentRenderer renderer = new CodeBlockSegmentRenderer(chatPanel, valStr, rendererId);
                 renderer.render();
-                argsPanel.add(renderer.getComponent(), "growx, wrap");
+                // For large arguments, the name is already on its own row, so the value starts a new row. (cell 1 row is correct)
+                // For short arguments, the value is in the second column of the current row. (cell 1 row is correct)
+                argsPanel.add(renderer.getComponent(), "cell 1 " + row + ", growx, hmin 40, wrap"); 
             } else if (valStr.length() > 100 || valStr.contains("\n")) {
                 JTextArea area = new JTextArea();
                 area.setEditable(false);
                 area.setLineWrap(true);
                 area.setWrapStyleWord(true);
                 area.setText(valStr);
-                argsPanel.add(new JScrollPane(area), "growx, hmin 40, wrap");
+                // For large arguments, the name is already on its own row, so the value starts a new row. (cell 1 row is correct)
+                // For short arguments, the value is in the second column of the current row. (cell 1 row is correct)
+                argsPanel.add(new JScrollPane(area), "cell 1 " + row + ", growx, hmin 40, wrap");
             } else {
-                argsPanel.add(new JLabel(valStr), "growx, wrap");
+                // Short argument value: in the second column, then wrap
+                argsPanel.add(new JLabel(valStr), "cell 1 " + row + ", wrap"); 
             }
+            row++; // Increment row for the next argument
         }
         argsPanel.revalidate();
+        argsPanel.repaint(); // Ensure repaint after revalidate
     }
 
     private void renderResults(AbstractToolResponse<?> response) {
@@ -279,6 +310,12 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         String color = chatConfig.getColor(response.getStatus());
         
         sb.append(" <font color='").append(color).append("'>[").append(statusText).append("]</font>");
+
+        Long executionTime = response.getExecutionTimeMillis();
+        if (executionTime != null && executionTime > 0) {
+            sb.append(" (").append(executionTime).append(" ms)");
+        }
+        
         sb.append("</html>");
         
         setTitle(sb.toString());

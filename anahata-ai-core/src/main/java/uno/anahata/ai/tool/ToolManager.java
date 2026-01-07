@@ -129,7 +129,7 @@ public class ToolManager {
         String callId = (id == null || id.isEmpty()) ? String.valueOf(callIdGenerator.incrementAndGet()) : id;
 
         Optional<? extends AbstractTool> toolOpt = findToolByName(name);
-
+        log.info("Found tool: " + toolOpt);
         AbstractTool tool;
         if (toolOpt.isPresent()) {
             tool = toolOpt.get();
@@ -211,7 +211,7 @@ public class ToolManager {
      * 
      * @return enabled toolkits that implement ContextProvider
      */
-    public List<ContextProvider> getContextProviders() {
+    public List<ContextProvider> getContextProviderTools() {
         List<ContextProvider> ret = new ArrayList<>();
         for (AbstractToolkit at: getEnabledToolkits()) {
             if (at instanceof ContextProvider cp) {

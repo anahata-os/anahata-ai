@@ -40,7 +40,7 @@ import uno.anahata.ai.tool.JavaToolkitInstance;
  * @author pablo
  */
 @Slf4j
-@AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls")
+@AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls and uses a child first classloader if additional classpath entries are provided")
 public class Java extends JavaToolkitInstance {
 
     public Map temp = Collections.synchronizedMap(new HashMap());
@@ -66,9 +66,8 @@ public class Java extends JavaToolkitInstance {
 
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        String ragText = "**Java Toolkit**\n"
-                + "Temp map keys: " + temp.keySet()
-                + "Default Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
+        String ragText = "\nTemp map keys: " + temp.keySet()
+                + "\nDefault Compiler / ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         new TextPart(ragMessage, ragText);
     }
     

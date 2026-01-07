@@ -15,12 +15,13 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.context.system.AbstractContextProvider;
+import uno.anahata.ai.context.provider.CoreContextProvider;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RagMessage;
+import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.model.resource.AbstractResource;
 import uno.anahata.ai.status.ChatStatusProvider;
@@ -70,11 +71,15 @@ public class ContextManager implements PropertyChangeSource {
      * Initializes the manager and registers default providers.
      */
     public void init() {
+        
+        registerContextProvider(new CoreContextProvider());
+        registerContextProvider(new ChatStatusProvider(chat));
         // Register toolkits as context providers
-        for (ContextProvider cp : chat.getToolManager().getContextProviders()) {
-            registerProvider(cp);
+        for (ContextProvider cp : chat.getToolManager().getContextProviderTools()) {
+            registerContextProvider(cp);
         }
-        registerProvider(new ChatStatusProvider(chat));
+        
+        registerContextProvider(chat.getResourceManager());
     }
     
     /**
@@ -94,7 +99,7 @@ public class ContextManager implements PropertyChangeSource {
      *
      * @param provider The provider to register.
      */
-    public void registerProvider(ContextProvider provider) {
+    public void registerContextProvider(ContextProvider provider) {
         providers.add(provider);
         log.info("Registered context provider: {}", provider.getName());
     }
@@ -110,13 +115,18 @@ public class ContextManager implements PropertyChangeSource {
 
         // 1. Process providers
         for (ContextProvider provider : providers) {
-            if (provider.isEnabled()) {
-                try {
-                    allSystemInstructions.addAll(provider.getSystemInstructions(chat));
+            String providerChunk = provider.getHeader();
+            if (provider.isEnabled()) {                                
+                try {                  
+                    List<String> systemInstructions = provider.getSystemInstructions(chat);                    
+                    for (String string : systemInstructions) {
+                        providerChunk+= "\n" + string;
+                    }
                 } catch (Exception e) {
                     log.error("Error executing system instruction provider: {}", provider.getName(), e);
                 }
             }
+            allSystemInstructions.add(providerChunk);
         }
         
         
@@ -139,18 +149,22 @@ public class ContextManager implements PropertyChangeSource {
                 .collect(Collectors.toList());
 
         RagMessage augmentedMessage = new RagMessage(chat);
-
-        // Process managed resources for prompt augmentation
-        for (AbstractResource resource : chat.getResourceManager().getResources()) {
-            try {
-                if (resource.getContextPosition() == ContextPosition.PROMPT_AUGMENTATION) {
-                    // Delegate rendering to the resource itself
-                    resource.populate(augmentedMessage);
+        
+        for (ContextProvider provider : providers) {            
+            if (provider.isEnabled()) {                                
+                try {                  
+                    String providerChunk = provider.getHeader();
+                    new TextPart(augmentedMessage, providerChunk);
+                    provider.populateMessage(augmentedMessage);
+                } catch (Exception e) {
+                    log.error("Error populating rag message for provider: {}", provider.getName(), e);
                 }
-            } catch (Exception e) {
-                log.error("Error processing managed resource {} for prompt augmentation", resource.getName(), e);
             }
         }
+        visibleHistory.add(augmentedMessage);
+
+        // Process managed resources for prompt augmentation
+        
 
         return visibleHistory;
     }
@@ -250,7 +264,7 @@ public class ContextManager implements PropertyChangeSource {
      * @return A synchronized, unmodifiable list of all messages.
      */
     public List<AbstractMessage> getHistory() {
-        return Collections.unmodifiableList(history);
+        return new ArrayList(history);
     }
 
     /**

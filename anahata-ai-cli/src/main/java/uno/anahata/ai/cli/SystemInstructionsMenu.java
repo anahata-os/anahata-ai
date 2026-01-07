@@ -6,7 +6,7 @@ import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.ContextProvider;
-import uno.anahata.ai.context.system.AbstractContextProvider;
+import uno.anahata.ai.context.AbstractContextProvider;
 
 /**
  * Handles the CLI menu for managing System Instructions Providers.

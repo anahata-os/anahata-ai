@@ -76,7 +76,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
     @Override
     public String getId() {
-        return "" + System.identityHashCode(this);
+        return toolInstance.getClass().getSimpleName();
     }
 
     @Override
