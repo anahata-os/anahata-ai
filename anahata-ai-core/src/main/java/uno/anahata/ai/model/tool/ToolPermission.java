@@ -15,8 +15,6 @@ import lombok.Getter;
 public enum ToolPermission {
     /** Approve the invocation for this turn only. */
     APPROVE("Approve"),
-    /** Deny the invocation for this turn only. */
-    DENY("Deny"),
     /** Approve for this turn and save the preference as ALWAYS. */
     APPROVE_ALWAYS("Approve Always"),
     /** Deny for this turn and save the preference as NEVER. */

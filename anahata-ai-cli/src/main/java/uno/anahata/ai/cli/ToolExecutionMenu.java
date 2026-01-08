@@ -160,7 +160,6 @@ public class ToolExecutionMenu {
         
         ToolPermission newPermission = switch (prefInput) {
             case "A" -> ToolPermission.APPROVE;
-            case "D" -> ToolPermission.DENY;
             case "ALWAYS" -> ToolPermission.APPROVE_ALWAYS;
             case "NEVER" -> ToolPermission.DENY_NEVER;
             default -> null;

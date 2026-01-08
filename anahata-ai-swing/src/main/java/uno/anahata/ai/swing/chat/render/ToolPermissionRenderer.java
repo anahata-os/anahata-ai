@@ -3,16 +3,16 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.ListCellRenderer;
 import uno.anahata.ai.model.tool.ToolPermission;
+import uno.anahata.ai.swing.chat.SwingChatConfig;
 
 /**
  * A specialized renderer for {@link ToolPermission} enums in JComboBoxes.
- * It displays the human-readable display value of the permission.
+ * It displays the human-readable display value of the permission with its corresponding color.
  * 
  * @author anahata-ai
  */
@@ -23,6 +23,7 @@ public class ToolPermissionRenderer extends DefaultListCellRenderer {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         if (value instanceof ToolPermission tp) {
             setText(tp.getDisplayValue());
+            setForeground(Color.decode(SwingChatConfig.getColor(tp)));
         }
         return this;
     }

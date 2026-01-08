@@ -6,7 +6,6 @@ package uno.anahata.ai.swing.chat.render;
 import java.awt.Color;
 import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
@@ -24,14 +23,8 @@ public class ToolExecutionStatusRenderer extends DefaultListCellRenderer {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
         if (value instanceof ToolExecutionStatus status) {
             setText(status.name());
-            if (!isSelected) {
-                setForeground(Color.decode(SwingChatConfig.getColor(status)));
-            }
+            setForeground(Color.decode(SwingChatConfig.getColor(status)));
         }
         return this;
-    }
-
-    private String toHexString(Color color) {
-        return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
 }

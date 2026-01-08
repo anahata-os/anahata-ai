@@ -3,16 +3,9 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.event.MouseWheelEvent;
-import java.util.List;
 import java.util.Map;
 import javax.swing.BorderFactory;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -24,8 +17,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
+import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.ai.internal.JacksonUtils;
-import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.tool.AbstractToolParameter;
@@ -33,6 +26,7 @@ import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.swing.chat.ChatPanel;
+import uno.anahata.ai.swing.chat.SwingChatConfig;
 import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.icons.RunIcon;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
@@ -56,6 +50,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JTextArea outputArea;
     private JTextArea errorArea;
     private JTextArea logsArea;
+    private ToolResponseAttachmentsPanel attachmentsPanel;
     
     private JTextField feedbackField;
     private CodeHyperlink jsonLink;
@@ -93,17 +88,24 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     }
 
     private void initComponents() {
-        getCentralContainer().setLayout(new MigLayout("fill, insets 0", "[grow]", "[grow][grow][]"));
+        getCentralContainer().setLayout(new MigLayout("fill, insets 0", "[grow]", "[grow][]"));
 
         // --- Split Pane ---
         argsPanel = new JPanel(new MigLayout("fillx, insets 5", "[][grow]"));
         argsPanel.setOpaque(false);
         
+        JScrollPane argsScrollPane = new JScrollPane(argsPanel);
+        argsScrollPane.setBorder(null);
+        argsScrollPane.setOpaque(false);
+        argsScrollPane.getViewport().setOpaque(false);
+        argsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(argsScrollPane, e));
+
         resultsTabbedPane = new JTabbedPane();
         
-        outputArea = createTextArea(chatConfig.getTheme().getToolOutputFg(), null);
+        outputArea = createTextArea(chatConfig.getTheme().getToolOutputFg(), chatConfig.getTheme().getToolOutputBg());
         errorArea = createTextArea(chatConfig.getTheme().getToolErrorFg(), chatConfig.getTheme().getToolErrorBg());
         logsArea = createTextArea(chatConfig.getTheme().getToolLogsFg(), chatConfig.getTheme().getToolLogsBg());
+        attachmentsPanel = new ToolResponseAttachmentsPanel(chatPanel);
 
         JScrollPane outputScrollPane = new JScrollPane(outputArea);
         outputScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(outputScrollPane, e));
@@ -117,29 +119,21 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         logsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(logsScrollPane, e));
         resultsTabbedPane.addTab("Logs", logsScrollPane);
 
-        // Directly add argsPanel to the split pane, no JScrollPane wrapper
-        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, argsPanel, resultsTabbedPane);
-        splitPane.setResizeWeight(0.5); // Give equal weight to both sides initially
+        // Horizontal split for integrated rendering
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, argsScrollPane, resultsTabbedPane);
+        splitPane.setResizeWeight(0.4); 
         splitPane.setOpaque(false);
         splitPane.setBorder(null);
-        splitPane.setOneTouchExpandable(true); // Enable one-touch expandable buttons
+        splitPane.setOneTouchExpandable(true); 
         
         getCentralContainer().add(splitPane, "grow, wrap");
 
         // --- Bottom Control Bar ---
-        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][][grow][]"));
+        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow]", "[][]"));
         controlBar.setOpaque(false);
         controlBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
 
-        // Feedback Row
-        controlBar.add(new JLabel("Feedback:"), "split 2");
-        feedbackField = new JTextField();
-        feedbackField.getDocument().addDocumentListener(new AnyChangeDocumentListener(() -> {
-            getPart().getResponse().setUserFeedback(feedbackField.getText());
-        }));
-        controlBar.add(feedbackField, "growx, wrap");
-
-        // Permission & Status Row
+        // Row 1: Permission (Left) and Feedback (Right, Large)
         permissionCombo = new JComboBox<>(new ToolPermission[]{
             ToolPermission.APPROVE, ToolPermission.APPROVE_ALWAYS, ToolPermission.DENY_NEVER
         });
@@ -148,6 +142,18 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             getPart().getTool().setPermission((ToolPermission) permissionCombo.getSelectedItem());
         });
 
+        feedbackField = new JTextField();
+        PromptSupport.setPrompt("Your comments to the model regarding this tool call", feedbackField);
+        PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, feedbackField);
+        feedbackField.getDocument().addDocumentListener(new AnyChangeDocumentListener(() -> {
+            getPart().getResponse().setUserFeedback(feedbackField.getText());
+        }));
+
+        controlBar.add(new JLabel("Permission:"), "split 2");
+        controlBar.add(permissionCombo);
+        controlBar.add(feedbackField, "growx, pushx, right, wrap");
+
+        // Row 2: Status and Run (Right)
         statusCombo = new JComboBox<>(ToolExecutionStatus.values());
         statusCombo.setRenderer(new ToolExecutionStatusRenderer());
         statusCombo.addActionListener(e -> {
@@ -162,12 +168,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 () -> JacksonUtils.prettyPrint(getPart().getResponse()), 
                 "json");
 
-        controlBar.add(new JLabel("Permission:"), "split 2");
-        controlBar.add(permissionCombo);
-        controlBar.add(new JLabel("Status:"), "split 2");
+        controlBar.add(new JLabel("Status:"), "split 4, skip 1, right");
         controlBar.add(statusCombo);
-        controlBar.add(runButton, "split 2");
-        controlBar.add(jsonLink, "right");
+        controlBar.add(runButton);
+        controlBar.add(jsonLink, "newline, right");
 
         getCentralContainer().add(controlBar, "growx");
     }
@@ -177,7 +181,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         AbstractTool<?, ?> tool = call.getTool();
         Map<String, Object> args = call.getArgs();
         
-        int row = 0; // Keep track of the current row for MigLayout
+        int row = 0; 
         for (Map.Entry<String, Object> entry : args.entrySet()) {
             String paramName = entry.getKey();
             Object value = entry.getValue();
@@ -190,24 +194,19 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
             String valStr = (value instanceof String s) ? s : JacksonUtils.prettyPrint(value);
 
-            // Determine if the argument is 'large' and should have its name above the value
             boolean isLargeArgument = (rendererId != null && !rendererId.isEmpty()) || 
                                       (valStr.length() > 100 || valStr.contains("\n"));
 
             if (isLargeArgument) {
-                // Large argument: Name above value, spanning both columns, then wrap
                 argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row + ", span 2, wrap");
-                row++; // Increment row for the value
+                row++; 
             } else {
-                // Short argument: Name beside value
-                argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row); // Name in first column
+                argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row); 
             }
 
             if (rendererId != null && !rendererId.isEmpty()) {
                 CodeBlockSegmentRenderer renderer = new CodeBlockSegmentRenderer(chatPanel, valStr, rendererId);
                 renderer.render();
-                // For large arguments, the name is already on its own row, so the value starts a new row. (cell 1 row is correct)
-                // For short arguments, the value is in the second column of the current row. (cell 1 row is correct)
                 argsPanel.add(renderer.getComponent(), "cell 1 " + row + ", growx, hmin 40, wrap"); 
             } else if (valStr.length() > 100 || valStr.contains("\n")) {
                 JTextArea area = new JTextArea();
@@ -215,17 +214,14 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 area.setLineWrap(true);
                 area.setWrapStyleWord(true);
                 area.setText(valStr);
-                // For large arguments, the name is already on its own row, so the value starts a new row. (cell 1 row is correct)
-                // For short arguments, the value is in the second column of the current row. (cell 1 row is correct)
                 argsPanel.add(new JScrollPane(area), "cell 1 " + row + ", growx, hmin 40, wrap");
             } else {
-                // Short argument value: in the second column, then wrap
                 argsPanel.add(new JLabel(valStr), "cell 1 " + row + ", wrap"); 
             }
-            row++; // Increment row for the next argument
+            row++; 
         }
         argsPanel.revalidate();
-        argsPanel.repaint(); // Ensure repaint after revalidate
+        argsPanel.repaint(); 
     }
 
     private void renderResults(AbstractToolResponse<?> response) {
@@ -247,14 +243,28 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
         logsArea.setText(logsBuilder.toString());
         
+        // 4. Attachments
+        if (!response.getAttachments().isEmpty()) {
+            if (resultsTabbedPane.indexOfComponent(attachmentsPanel) == -1) {
+                resultsTabbedPane.addTab("Attachments", attachmentsPanel);
+            }
+            attachmentsPanel.render(response.getAttachments());
+        } else {
+            if (resultsTabbedPane.indexOfComponent(attachmentsPanel) != -1) {
+                resultsTabbedPane.remove(attachmentsPanel);
+            }
+        }
+        
         // Reactive Tab Selection
         if (response.getStatus() == ToolExecutionStatus.FAILED) {
-            resultsTabbedPane.setSelectedIndex(1); // Select Error tab
+            resultsTabbedPane.setSelectedIndex(1); 
         } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
-            if (logsArea.getText().isEmpty()) {
-                resultsTabbedPane.setSelectedIndex(0); // Select Output tab
-            } else {
+            if (!response.getAttachments().isEmpty()) {
+                resultsTabbedPane.setSelectedIndex(resultsTabbedPane.indexOfComponent(attachmentsPanel));
+            } else if (!logsArea.getText().isEmpty()) {
                 resultsTabbedPane.setSelectedIndex(2);
+            } else {
+                resultsTabbedPane.setSelectedIndex(0);
             }
         }
     }
@@ -306,8 +316,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         StringBuilder sb = new StringBuilder("<html>");
         sb.append("<b>Tool: </b>").append(call.getToolName());
         
-        String statusText = response.getStatus() != null ? response.getStatus().name() : "PENDING";
-        String color = chatConfig.getColor(response.getStatus());
+        String statusText = response.getStatus() != null ? response.getStatus().name() : "";
+        String color = SwingChatConfig.getColor(response.getStatus());
         
         sb.append(" <font color='").append(color).append("'>[").append(statusText).append("]</font>");
 
@@ -319,9 +329,5 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         sb.append("</html>");
         
         setTitle(sb.toString());
-    }
-
-    private String getStatusColor(ToolExecutionStatus status) {
-        return chatConfig.getColor(status);
     }
 }

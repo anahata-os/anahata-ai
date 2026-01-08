@@ -4,8 +4,8 @@ This board tracks the high-priority tactical goals for the V2 architecture migra
 
 ## 🎯 Active Mission: V2 UI & Tooling Refinement
 
-### 🟡 In Progress
-- [ ] **Integrated Tool Execution Rendering**: Implement a left-to-right layout where tool responses are displayed next to their corresponding tool calls within the model message, eliminating the separate tool message panel.
+### ✅ Completed
+- [x] **Integrated Tool Execution Rendering**: Implement a left-to-right layout where tool responses are displayed next to their corresponding tool calls within the model message, eliminating the separate tool message panel.
 
 ### 🔴 Backlog
 - [ ] **Billed Tokens Display**: Test if billed tokens are correctly shown in the model message headers.
@@ -20,4 +20,4 @@ This board tracks the high-priority tactical goals for the V2 architecture migra
 - [ ] **Test Multi-Candidate Selection**: Verify the UI and logic for handling multiple model responses.
 
 ---
-*Last Updated: Mon Jan 05 11:45:00 CET 2026*
+*Last Updated: Wed Jan 07 20:15:00 CET 2026*

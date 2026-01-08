@@ -11,6 +11,7 @@ import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.model.core.Role;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
+import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.swing.chat.render.editorkit.DefaultEditorKitProvider;
 import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
@@ -34,11 +35,10 @@ public class SwingChatConfig extends ChatConfig {
     /**
      * If true, sound notifications will be played on status changes.
      */
-    private boolean audioFeedbackEnabled = true; // Added field
+    private boolean audioFeedbackEnabled = true; 
 
     public SwingChatConfig(AiConfig aiConfig) {
         super(aiConfig, "standalone");
-        //this.editorKitProvider = new DefaultEditorKitProvider();
     }
 
     public static Color getColor(ChatStatus status) {
@@ -74,7 +74,17 @@ public class SwingChatConfig extends ChatConfig {
             case EXECUTED -> "#28a745"; // Green
             case FAILED -> "#dc3545";   // Red
             case PENDING -> "#800080";  // Purple
-            default -> "#6c757d";       // Gray
+            case NOT_FOUND -> "#fd7e14"; // Orange
+            case NOT_EXECUTED -> "#6c757d"; // Gray
+        };
+    }
+
+    public static String getColor(ToolPermission permission) {
+        if (permission == null) return "#888888";
+        return switch (permission) {
+            case APPROVE -> "#007bff";        // Blue
+            case APPROVE_ALWAYS -> "#28a745"; // Green
+            case DENY_NEVER -> "#dc3545";     // Red
         };
     }
 
@@ -116,7 +126,8 @@ public class SwingChatConfig extends ChatConfig {
         private final Color toolHeaderFg = new Color(80, 60, 100);
         private final Color toolBorder = new Color(200, 180, 220);
         
-        private final Color toolOutputFg = new Color(0, 128, 0);
+        private final Color toolOutputFg = Color.GREEN;
+        private final Color toolOutputBg = Color.BLACK;
         private final Color toolErrorFg = Color.RED.darker();
         private final Color toolErrorBg = new Color(255, 235, 235);
         private final Color toolLogsFg = Color.GRAY;
