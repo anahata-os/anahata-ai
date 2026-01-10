@@ -4,6 +4,7 @@
 package uno.anahata.ai.swing.chat.render;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -15,6 +16,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.prompt.PromptSupport;
@@ -118,7 +120,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         // Horizontal split for integrated rendering
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, argsPanel, resultsTabbedPane);
-        splitPane.setResizeWeight(0.4); 
+        splitPane.setResizeWeight(1.0); // Prioritize arguments panel when resizing
         splitPane.setOpaque(false);
         splitPane.setBorder(null);
         splitPane.setOneTouchExpandable(true); 
@@ -132,7 +134,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         // Row 1: Permission (Left) and Feedback (Right, Large)
         permissionCombo = new JComboBox<>(new ToolPermission[]{
-            ToolPermission.APPROVE, ToolPermission.APPROVE_ALWAYS, ToolPermission.DENY_NEVER
+            ToolPermission.PROMPT, ToolPermission.APPROVE_ALWAYS, ToolPermission.DENY_NEVER
         });
         permissionCombo.setRenderer(new ToolPermissionRenderer());
         permissionCombo.addActionListener(e -> {
@@ -252,8 +254,22 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             attachmentsPanel.render(response);
         }
         
-        // Reactive Tab Selection (only if the selected tab was removed or if we just executed)
-        if (resultsTabbedPane.getTabCount() > 0) {
+        // Dynamic Visibility: Hide the results side if it has no tabs
+        boolean hasResults = resultsTabbedPane.getTabCount() > 0;
+        
+        if (hasResults) {
+            splitPane.setRightComponent(resultsTabbedPane);
+            
+            // Smart Divider Logic: Use as little space as possible, capped at 50%
+            SwingUtilities.invokeLater(() -> {
+                int totalWidth = splitPane.getWidth();
+                if (totalWidth > 0) {
+                    Dimension prefSize = resultsTabbedPane.getPreferredSize();
+                    int targetWidth = Math.min(prefSize.width + 20, totalWidth / 2);
+                    splitPane.setDividerLocation(totalWidth - targetWidth);
+                }
+            });
+
             if (resultsTabbedPane.getSelectedIndex() == -1) {
                 resultsTabbedPane.setSelectedIndex(0);
             }
@@ -269,6 +285,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                     resultsTabbedPane.setSelectedComponent(outputScrollPane);
                 }
             }
+        } else {
+            splitPane.setRightComponent(null);
         }
     }
     

@@ -55,7 +55,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         // Set parent fields
         this.toolkit = toolkit;
         this.permission = toolAnnotation.requiresApproval()
-            ? ToolPermission.APPROVE
+            ? ToolPermission.PROMPT
             : ToolPermission.APPROVE_ALWAYS;
         super.responseJsonSchema = SchemaProvider.generateInlinedSchemaString(getResponseType(), "result", method.getGenericReturnType());
         

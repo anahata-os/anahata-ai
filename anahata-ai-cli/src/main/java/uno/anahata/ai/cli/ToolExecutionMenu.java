@@ -159,7 +159,8 @@ public class ToolExecutionMenu {
         String prefInput = scanner.nextLine().toUpperCase();
         
         ToolPermission newPermission = switch (prefInput) {
-            case "A" -> ToolPermission.APPROVE;
+            case "A" -> ToolPermission.PROMPT;
+
             case "ALWAYS" -> ToolPermission.APPROVE_ALWAYS;
             case "NEVER" -> ToolPermission.DENY_NEVER;
             default -> null;

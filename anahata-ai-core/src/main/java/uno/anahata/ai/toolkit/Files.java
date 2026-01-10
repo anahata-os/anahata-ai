@@ -13,7 +13,7 @@ import uno.anahata.ai.model.resource.TextViewport;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolException;
 import uno.anahata.ai.tool.AiToolkit;
-import uno.anahata.ai.tool.JavaToolkitInstance;
+import uno.anahata.ai.tool.AnahataToolkit;
 import uno.anahata.ai.tool.AiToolParam;
 
 /**
@@ -23,7 +23,7 @@ import uno.anahata.ai.tool.AiToolParam;
  */
 @AiToolkit("A toolkit for loading and managing file-based resources.")
 @Slf4j
-public class Files extends JavaToolkitInstance {
+public class Files extends AnahataToolkit {
 
     public void updateTextFileViewport(
             @AiToolParam("The absolute paths to the text files.") String resourceId, @AiToolParam("The new view port for the text file") TextViewport newViewPort) throws Exception {

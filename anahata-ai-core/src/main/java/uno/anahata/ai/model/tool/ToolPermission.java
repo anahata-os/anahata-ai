@@ -14,7 +14,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ToolPermission {
     /** Approve the invocation for this turn only. */
-    APPROVE("Approve"),
+    PROMPT("Prompt"),
     /** Approve for this turn and save the preference as ALWAYS. */
     APPROVE_ALWAYS("Approve Always"),
     /** Deny for this turn and save the preference as NEVER. */

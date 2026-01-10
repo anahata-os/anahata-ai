@@ -38,7 +38,7 @@ import uno.anahata.ai.tool.AiToolException;
 import uno.anahata.ai.tool.AiToolParam;
 import uno.anahata.ai.tool.AiToolkit;
 import uno.anahata.ai.tool.AnahataTool;
-import uno.anahata.ai.tool.JavaToolkitInstance;
+import uno.anahata.ai.tool.AnahataToolkit;
 
 /**
  *
@@ -46,7 +46,7 @@ import uno.anahata.ai.tool.JavaToolkitInstance;
  */
 @Slf4j
 @AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls and uses a child first classloader if additional classpath entries are provided")
-public class Java extends JavaToolkitInstance {
+public class Java extends AnahataToolkit {
 
     public Map temp = Collections.synchronizedMap(new HashMap());
     public String defaultCompilerClasspath;
@@ -292,13 +292,15 @@ public class Java extends JavaToolkitInstance {
 
     @AiTool(
             value = "Compiles and executes a Java class named 'Anahata' on the application's JVM.\n"
-            + "The class should extend AnahataTool and implement the call() method for the most elegant experience.\n"
-            + "Alternatively, it can implement java.util.concurrent.Callable.",
+            + "The class should:\n"
+                    + "- have no package declaration, \n"
+                    + "- extend uno.anahata.ai.tool.AnahataTool and \n"
+                    + "- implement java.util.concurrent.Callable<Object>.\n",
             requiresApproval = true
     )
     public Object compileAndExecute(
-            @AiToolParam(value = "Source code of a public class called 'Anahata' with no package declaration.", rendererId = "java") String sourceCode,
-            @AiToolParam(value = "Compiler's additional classpath entries separated with File.pathSeparator. ", required = false) String extraClassPath,
+            @AiToolParam(value = "Source code of a public class called 'Anahata' that extends AnahataTool, implement Callable and has no package declaration.", rendererId = "java") String sourceCode,
+            @AiToolParam(value = "Compiler's additional classpath entries separated with File.pathSeparator. These will be first in the final compiler's and ClassLoader's classpath", required = false) String extraClassPath,
             @AiToolParam(value = "Compiler's options.", required = false) String[] compilerOptions) throws Exception {
 
         log.info("executeJavaCode: \nsource={}", sourceCode);

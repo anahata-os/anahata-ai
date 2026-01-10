@@ -16,14 +16,14 @@ import uno.anahata.ai.resource.ResourceManager;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolParam;
 import uno.anahata.ai.tool.AiToolkit;
-import uno.anahata.ai.tool.JavaToolkitInstance;
+import uno.anahata.ai.tool.AnahataToolkit;
 
 /**
  *
  * @author pablo
  */
 @AiToolkit("Tools for managing the context window: ")
-public class ContextWindow extends JavaToolkitInstance{
+public class ContextWindow extends AnahataToolkit{
     
     @AiTool(value = "Removes the provided managed resources from the active workspace (RAG message).", retention = 0)
     public void unregisterResource(

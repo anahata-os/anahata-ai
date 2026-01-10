@@ -82,7 +82,7 @@ public class SwingChatConfig extends ChatConfig {
     public static String getColor(ToolPermission permission) {
         if (permission == null) return "#888888";
         return switch (permission) {
-            case APPROVE -> "#007bff";        // Blue
+            case PROMPT -> "#007bff";        // Blue
             case APPROVE_ALWAYS -> "#28a745"; // Green
             case DENY_NEVER -> "#dc3545";     // Red
         };

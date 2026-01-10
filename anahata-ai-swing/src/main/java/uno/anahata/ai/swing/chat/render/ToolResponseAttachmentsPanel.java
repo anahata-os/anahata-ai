@@ -96,7 +96,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     }
 
     private JPanel createAttachmentPanel(ToolResponseAttachment attachment) {
-        JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5", "[grow][]", "[]0[]"));
+        JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5", "[][][]", "[]0[]"));
         itemPanel.setOpaque(false);
         itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, java.awt.Color.LIGHT_GRAY));
 
@@ -107,10 +107,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         JLabel infoLabel = new JLabel("Attachment (" + mimeType + "): " + TextUtils.formatSize(data.length));
         itemPanel.add(infoLabel, "aligny top");
 
-        // Action buttons on the same row
-        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        actionsPanel.setOpaque(false);
-
+        // Action buttons on the same row, immediately after the label
         JButton viewButton = new JButton(new SearchIcon(14));
         viewButton.setToolTipText("View Attachment");
         viewButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
@@ -121,13 +118,12 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         deleteButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
         deleteButton.addActionListener(e -> response.removeAttachment(attachment));
 
-        actionsPanel.add(viewButton);
-        actionsPanel.add(deleteButton);
-        itemPanel.add(actionsPanel, "aligny top, wrap");
+        itemPanel.add(viewButton, "aligny top, gapleft 5");
+        itemPanel.add(deleteButton, "aligny top, gapleft 2, wrap");
 
         // Media Content (Image/Audio) below the label
         if (mimeType.startsWith("image/")) {
-            itemPanel.add(MediaRenderer.createImageComponent(data, this), "span 2, alignx left, wrap");
+            itemPanel.add(MediaRenderer.createImageComponent(data, this), "span 3, alignx left, wrap");
         } else if (mimeType.startsWith("audio/")) {
             AudioPlaybackPanel audioPanel = chatPanel.getStatusPanel().getAudioPlaybackPanel();
             itemPanel.add(MediaRenderer.createAudioComponent(data, audioPanel, stopper -> {
@@ -137,7 +133,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
                 } else {
                     playbackStoppers.put(attachment, stopper);
                 }
-            }), "span 2, alignx left, wrap");
+            }), "span 3, alignx left, wrap");
         }
 
         return itemPanel;

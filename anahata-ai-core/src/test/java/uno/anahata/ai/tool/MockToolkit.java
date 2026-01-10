@@ -7,7 +7,7 @@ import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
 
 @AiToolkit(value = "A mock toolkit for testing schema generation and context injection.", retention = 10)
-public class MockToolkit extends JavaToolkitInstance {
+public class MockToolkit extends AnahataToolkit {
 
     @AiTool("Returns a greeting for the given name.")
     public String sayHello(@AiToolParam("The name to greet.") String name) {

@@ -29,11 +29,6 @@ public class ToolPermissionRenderer extends DefaultListCellRenderer {
             setForeground(Color.decode(SwingChatConfig.getColor(tp)));
         }
         
-        if (isComboBoxButton) {
-            setOpaque(false);
-            setBackground(new Color(0,0,0,0));
-        }
-        
         return c;
     }
 }

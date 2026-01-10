@@ -151,14 +151,14 @@ public class ToolDetailPanel extends JPanel {
             case DENY_NEVER:
                 neverButton.setSelected(true);
                 break;
-            default: // APPROVE or DENY (treat as prompt)
+            default: // PROMPT or DENY (treat as prompt)
                 promptButton.setSelected(true);
                 break;
         }
 
         // Add listeners to update the tool's permission
         promptButton.addActionListener(e -> {
-            tool.setPermission(ToolPermission.APPROVE);
+            tool.setPermission(ToolPermission.PROMPT);
             parentPanel.refresh();
         });
         alwaysButton.addActionListener(e -> {

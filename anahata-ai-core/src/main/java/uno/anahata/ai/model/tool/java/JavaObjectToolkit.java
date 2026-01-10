@@ -11,7 +11,7 @@ import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.ContextProvider;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.tool.AbstractToolkit;
-import uno.anahata.ai.tool.JavaToolkitInstance;
+import uno.anahata.ai.tool.AnahataToolkit;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolkit;
 import uno.anahata.ai.tool.ToolManager;
@@ -81,7 +81,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
     @Override
     public List<String> getSystemInstructions(Chat chat) throws Exception {
-        if (toolInstance instanceof JavaToolkitInstance ajt) {
+        if (toolInstance instanceof AnahataToolkit ajt) {
             return ajt.getSystemInstructionParts(chat);
         } else {
             return Collections.EMPTY_LIST;
@@ -90,7 +90,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        if (toolInstance instanceof JavaToolkitInstance ajt) {
+        if (toolInstance instanceof AnahataToolkit ajt) {
             ajt.populateMessage(ragMessage);
         }
     }

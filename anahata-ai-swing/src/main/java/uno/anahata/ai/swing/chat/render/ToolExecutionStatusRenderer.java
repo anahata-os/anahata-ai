@@ -29,11 +29,6 @@ public class ToolExecutionStatusRenderer extends DefaultListCellRenderer {
             setForeground(Color.decode(SwingChatConfig.getColor(status)));
         }
         
-        if (isComboBoxButton) {
-            setOpaque(false);
-            setBackground(new Color(0,0,0,0));
-        }
-        
         return c;
     }
 }

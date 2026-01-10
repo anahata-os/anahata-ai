@@ -97,6 +97,9 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 log.info("Using RSyntaxTextArea for language '{}'.", language);
                 innerComponent = createRSyntaxTextArea(currentContent, language);
             }
+            
+            // Redispatch mouse wheel events from the inner component to the parent scroll pane
+            innerComponent.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(innerComponent, e));
 
             // --- Robust Header Approach (BorderLayout) ---
             JPanel container = new JPanel(new BorderLayout());
