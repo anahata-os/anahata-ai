@@ -142,13 +142,7 @@ public class InputPanel extends JPanel {
         this.currentMessage = new InputUserMessage(chat);
         this.inputMessagePreview = new UserInputMessagePanel(chatPanel, currentMessage);
 
-        // Wrap the preview in a ScrollablePanel to ensure correct scrolling behavior
-        ScrollablePanel previewWrapper = new ScrollablePanel();
-        previewWrapper.setLayout(new BorderLayout());
-        previewWrapper.setOpaque(false);
-        previewWrapper.add(inputMessagePreview, BorderLayout.CENTER);
-
-        previewScrollPane = new JScrollPane(previewWrapper);
+        previewScrollPane = new JScrollPane(inputMessagePreview);
         previewScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         previewScrollPane.setPreferredSize(new Dimension(0, 150)); 
         previewScrollPane.setMinimumSize(new Dimension(0, 100)); 
@@ -403,11 +397,7 @@ public class InputPanel extends JPanel {
             
             // Re-render preview
             UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
-            ScrollablePanel previewWrapper = new ScrollablePanel();
-            previewWrapper.setLayout(new BorderLayout());
-            previewWrapper.setOpaque(false);
-            previewWrapper.add(newRenderer, BorderLayout.CENTER);
-            previewScrollPane.setViewportView(previewWrapper);
+            previewScrollPane.setViewportView(newRenderer);
             this.inputMessagePreview = newRenderer;
         }
     }
@@ -461,11 +451,7 @@ public class InputPanel extends JPanel {
         // The old renderer's EdtPropertyChangeListener will unbind automatically
         // when it is removed from the scroll pane's viewport.
         UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
-        ScrollablePanel previewWrapper = new ScrollablePanel();
-        previewWrapper.setLayout(new BorderLayout());
-        previewWrapper.setOpaque(false);
-        previewWrapper.add(newRenderer, BorderLayout.CENTER);
-        previewScrollPane.setViewportView(previewWrapper);
+        previewScrollPane.setViewportView(newRenderer);
         this.inputMessagePreview = newRenderer;
     }
 

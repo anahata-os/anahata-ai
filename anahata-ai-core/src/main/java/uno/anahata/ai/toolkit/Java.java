@@ -32,6 +32,7 @@ import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.internal.ClasspathPrinter;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.model.tool.java.JavaMethodTool;
 import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolException;
@@ -48,19 +49,34 @@ import uno.anahata.ai.tool.AnahataToolkit;
 @Slf4j
 @AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls and uses a child first classloader if additional classpath entries are provided")
 public class Java extends AnahataToolkit {
+    
 
     /**
-     * A toolkit lived 
+     * A session scoped map
      */
-    public Map sessionMapKey = Collections.synchronizedMap(new HashMap());
+    public Map sessionMap = Collections.synchronizedMap(new HashMap());
+    
+    /**
+     * An application scoped map
+     */
+    public static Map applicationMap = Collections.synchronizedMap(new HashMap());
     
     /**
      * The base compiler and classloader classpath (extra can be provided at execution time)
      */
     public String defaultCompilerClasspath;
 
+    /**
+     * 
+     */
     public Java() {
         defaultCompilerClasspath = System.getProperty("java.class.path");
+        log.info("Java toolkit instantiated:");
+        try {
+            log.info(getSystemInstructionParts(null).toString());       
+        } catch (Exception e) {
+        }
+        
     }
 
     @AiTool("The full default classpath for compiling java code and for class loading")
@@ -79,7 +95,8 @@ public class Java extends AnahataToolkit {
 
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        String ragText = "\nSession map keys: " + sessionMapKey.keySet()
+        String ragText = "\nSession map keys: " + sessionMap.keySet()
+                + "\nApplication map keys: " + applicationMap.keySet()
                 + "\nDefault Compiler / ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         new TextPart(ragMessage, ragText);
     }
@@ -91,8 +108,12 @@ public class Java extends AnahataToolkit {
         sb.append("When using `compileAndExecute`, your class should extend `uno.anahata.ai.tool.AnahataTool`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
         
-        sb.append("#### Available Methods inherited from AnahataTool:\n");
+        sb.append("#### Available Methods that you can use within the code you write (inherited from AnahataTool):\n");
         appendMethods(sb, AnahataTool.class);
+        appendMethods(sb, HandyToolStuff.class);
+        
+        sb.append("\nAbout the maps: the session map is for you only (chat scoped) and the application map to be shared all other instances of you (jvm scoped)\n");
+        sb.append("\nAbout the attachments: at the time of this release (only tested with gemini-3-flash) only pdf, text and image attachments are supported\n");
         
         sb.append("\n#### Example:\n");
         sb.append("```java\n");
@@ -115,21 +136,18 @@ public class Java extends AnahataToolkit {
         sb.append("    }\n");
         sb.append("}\n");
         sb.append("```\n");
+        
+        
         return Collections.singletonList(sb.toString());
     }
 
     private void appendMethods(StringBuilder sb, Class<?> clazz) {
-        for (Method m : clazz.getMethods()) {
-            // Filter out Object methods and internal framework methods if necessary
-            if (m.getDeclaringClass() == Object.class) continue;
-            
-            sb.append("- `").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
-            Parameter[] params = m.getParameters();
-            for (int i = 0; i < params.length; i++) {
-                sb.append(params[i].getType().getSimpleName()).append(" ").append(params[i].getName());
-                if (i < params.length - 1) sb.append(", ");
+        
+        for (Method m : clazz.getDeclaredMethods()) {
+            String methodString = JavaMethodTool.buildMethodSignature(m);
+            if (!methodString.contains("anahata")) {
+                sb.append("- `").append(methodString).append("`\n");
             }
-            sb.append(")`\n");
         }
     }
 

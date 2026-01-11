@@ -5,9 +5,9 @@ This board tracks the high-priority tactical goals for the V2 architecture migra
 ## 🎯 Active Mission: V2 UI & Tooling Refinement
 
 ### ✅ Completed
-- [ ] **Integrated Tool Execution Rendering**: Implement a left-to-right layout where tool responses are displayed next to their corresponding tool calls within the model message, eliminating the separate tool message panel.
-- [ ] **Elegant Java Context**: Move the tool execution context (ThreadLocal) to `JavaMethodToolResponse` and support a base class (`AnahataTool`) for model-compiled code, with rich system instructions.
-- [ ] **Staged Message Visibility**: Fix the bug where staged messages were not visible in the UI and ensure layout refreshes correctly.
+- [x] **Integrated Tool Execution Rendering**: Implement a left-to-right layout where tool responses are displayed next to their corresponding tool calls within the model message, eliminating the separate tool message panel.
+- [x] **Elegant Java Context**: Move the tool execution context (ThreadLocal) to `JavaMethodToolResponse` and support a base class (`AnahataTool`) for model-compiled code, with rich system instructions.
+- [x] **Staged Message Visibility**: Fix the bug where staged messages were not visible in the UI and ensure layout refreshes correctly.
 
 ### 🔴 Backlog
 - [ ] **In-Band Metadata Injection**: Inject message and part IDs/metadata into the prompt (Text headers for User/Model, JSON metadata for Tools) to improve model self-awareness.

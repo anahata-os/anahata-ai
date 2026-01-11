@@ -13,7 +13,6 @@ import uno.anahata.ai.model.core.Role;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.status.ChatStatus;
-import uno.anahata.ai.swing.chat.render.editorkit.DefaultEditorKitProvider;
 import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 
 /**
@@ -68,23 +67,23 @@ public class SwingChatConfig extends ChatConfig {
         }
     }
     
-    public static String getColor(ToolExecutionStatus status) {
-        if (status == null) return "#888888";
+    public static Color getColor(ToolExecutionStatus status) {
+        if (status == null) return Color.GRAY;
         return switch (status) {
-            case EXECUTED -> "#28a745"; // Green
-            case FAILED -> "#dc3545";   // Red
-            case PENDING -> "#800080";  // Purple
-            case NOT_FOUND -> "#fd7e14"; // Orange
-            case NOT_EXECUTED -> "#6c757d"; // Gray
+            case EXECUTED -> new Color(40, 167, 69); // Green
+            case FAILED -> new Color(220, 53, 69);   // Red
+            case PENDING -> new Color(128, 0, 128);  // Purple
+            case NOT_FOUND -> new Color(253, 126, 20); // Orange
+            case NOT_EXECUTED -> new Color(108, 117, 125); // Gray
         };
     }
 
-    public static String getColor(ToolPermission permission) {
-        if (permission == null) return "#888888";
+    public static Color getColor(ToolPermission permission) {
+        if (permission == null) return Color.GRAY;
         return switch (permission) {
-            case PROMPT -> "#007bff";        // Blue
-            case APPROVE_ALWAYS -> "#28a745"; // Green
-            case DENY_NEVER -> "#dc3545";     // Red
+            case PROMPT -> new Color(0, 123, 255);        // Blue
+            case APPROVE_ALWAYS -> new Color(40, 167, 69); // Green
+            case DENY_NEVER -> new Color(220, 53, 69);     // Red
         };
     }
 

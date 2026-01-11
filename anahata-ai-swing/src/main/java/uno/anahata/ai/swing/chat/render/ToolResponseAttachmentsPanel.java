@@ -32,7 +32,7 @@ import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
  * A panel for rendering a list of {@link ToolResponseAttachment}s.
  * It uses a diff-based approach to avoid unnecessary re-renders.
  * 
- * @author anahata-ai
+ * @author anahata
  */
 @Slf4j
 public class ToolResponseAttachmentsPanel extends JPanel {
@@ -96,7 +96,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     }
 
     private JPanel createAttachmentPanel(ToolResponseAttachment attachment) {
-        JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5", "[][][]", "[]0[]"));
+        JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5, gap 0", "[grow]", "[]0[]"));
         itemPanel.setOpaque(false);
         itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, java.awt.Color.LIGHT_GRAY));
 
@@ -105,25 +105,27 @@ public class ToolResponseAttachmentsPanel extends JPanel {
 
         // Label and Info
         JLabel infoLabel = new JLabel("Attachment (" + mimeType + "): " + TextUtils.formatSize(data.length));
-        itemPanel.add(infoLabel, "aligny top");
-
-        // Action buttons on the same row, immediately after the label, no gaps
+        
         JButton viewButton = new JButton(new SearchIcon(14));
         viewButton.setToolTipText("View Attachment");
-        viewButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        viewButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        viewButton.setFocusable(false);
         viewButton.addActionListener(e -> viewAttachment(attachment));
 
         JButton deleteButton = new JButton(new DeleteIcon(14));
         deleteButton.setToolTipText("Remove Attachment");
-        deleteButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        deleteButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        deleteButton.setFocusable(false);
         deleteButton.addActionListener(e -> response.removeAttachment(attachment));
 
-        itemPanel.add(viewButton, "aligny top, gapleft 0");
-        itemPanel.add(deleteButton, "aligny top, gapleft 0, wrap");
+        // Add them to the first row: Label and View on the left, Delete on the far right
+        itemPanel.add(infoLabel, "split 3, gapright 0");
+        itemPanel.add(viewButton, "gapright push");
+        itemPanel.add(deleteButton, "right, wrap");
 
         // Media Content (Image/Audio) below the label
         if (mimeType.startsWith("image/")) {
-            itemPanel.add(MediaRenderer.createImageComponent(data, this), "span 3, alignx left, wrap");
+            itemPanel.add(MediaRenderer.createImageComponent(data, this), "growx, wrap");
         } else if (mimeType.startsWith("audio/")) {
             AudioPlaybackPanel audioPanel = chatPanel.getStatusPanel().getAudioPlaybackPanel();
             itemPanel.add(MediaRenderer.createAudioComponent(data, audioPanel, stopper -> {
@@ -133,7 +135,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
                 } else {
                     playbackStoppers.put(attachment, stopper);
                 }
-            }), "span 3, alignx left, wrap");
+            }), "growx, wrap");
         }
 
         return itemPanel;

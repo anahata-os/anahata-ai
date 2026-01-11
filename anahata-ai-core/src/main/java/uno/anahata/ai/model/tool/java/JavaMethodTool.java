@@ -82,7 +82,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         }
     }
     
-    private static String buildMethodSignature(Method m) {
+    public static String buildMethodSignature(Method m) {
         String signature = Modifier.toString(m.getModifiers())
             + " " + m.getGenericReturnType().getTypeName()
             + " " + m.getName() + "("

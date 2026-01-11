@@ -3,7 +3,6 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
-import java.awt.Color;
 import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JList;
@@ -26,7 +25,7 @@ public class ToolExecutionStatusRenderer extends DefaultListCellRenderer {
         
         if (value instanceof ToolExecutionStatus status) {
             setText(status.name());
-            setForeground(Color.decode(SwingChatConfig.getColor(status)));
+            setForeground(SwingChatConfig.getColor(status));
         }
         
         return c;

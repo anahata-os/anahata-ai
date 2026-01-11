@@ -42,7 +42,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * view for arguments and results, along with interactive controls for managing
  * permissions, execution status, and user feedback.
  * 
- * @author anahata-ai
+ * @author anahata
  */
 public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
@@ -138,7 +138,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         });
         permissionCombo.setRenderer(new ToolPermissionRenderer());
         permissionCombo.addActionListener(e -> {
-            getPart().getTool().setPermission((ToolPermission) permissionCombo.getSelectedItem());
+            ToolPermission tp = (ToolPermission) permissionCombo.getSelectedItem();
+            getPart().getTool().setPermission(tp);
+            permissionCombo.setForeground(SwingChatConfig.getColor(tp));
         });
 
         feedbackField = new JTextField();
@@ -156,7 +158,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         statusCombo = new JComboBox<>(ToolExecutionStatus.values());
         statusCombo.setRenderer(new ToolExecutionStatusRenderer());
         statusCombo.addActionListener(e -> {
-            getPart().getResponse().setStatus((ToolExecutionStatus) statusCombo.getSelectedItem());
+            ToolExecutionStatus status = (ToolExecutionStatus) statusCombo.getSelectedItem();
+            getPart().getResponse().setStatus(status);
+            statusCombo.setForeground(SwingChatConfig.getColor(status));
         });
 
         revertButton = new JButton("Revert", new DeleteIcon(16));
@@ -260,14 +264,11 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         if (hasResults) {
             splitPane.setRightComponent(resultsTabbedPane);
             
-            // Smart Divider Logic: Use as little space as possible, capped at 50%
+            // Smart Divider Logic: Ensure the results side gets at least 50% of the space
             SwingUtilities.invokeLater(() -> {
                 int totalWidth = splitPane.getWidth();
                 if (totalWidth > 0) {
-                    Dimension prefSize = resultsTabbedPane.getPreferredSize();
-                    // Ensure the results side gets at least 40% if it has content, but cap at 50%
-                    int targetWidth = Math.max(totalWidth * 4 / 10, Math.min(prefSize.width + 20, totalWidth / 2));
-                    splitPane.setDividerLocation(totalWidth - targetWidth);
+                    splitPane.setDividerLocation(totalWidth / 2);
                 }
             });
 
@@ -303,6 +304,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private void updateControls(AbstractToolCall<?, ?> call, AbstractToolResponse<?> response) {
         permissionCombo.setSelectedItem(call.getTool().getPermission());
         statusCombo.setSelectedItem(response.getStatus());
+        
+        // Ensure initial colors are set
+        permissionCombo.setForeground(SwingChatConfig.getColor(call.getTool().getPermission()));
+        statusCombo.setForeground(SwingChatConfig.getColor(response.getStatus()));
         
         if (!feedbackField.getText().equals(response.getUserFeedback())) {
             feedbackField.setText(response.getUserFeedback());
@@ -352,7 +357,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         sb.append("<b>Tool: </b>").append(call.getToolName());
         
         String statusText = response.getStatus() != null ? response.getStatus().name() : "";
-        String color = SwingChatConfig.getColor(response.getStatus());
+        String color = SwingUtils.toHtmlColor(SwingChatConfig.getColor(response.getStatus()));
         
         sb.append(" <font color='").append(color).append("'>[").append(statusText).append("]</font>");
 
