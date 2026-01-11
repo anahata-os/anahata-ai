@@ -4,11 +4,14 @@
  */
 package uno.anahata.ai.toolkit;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.ContextProvider;
 import uno.anahata.ai.context.ContextManager;
+import uno.anahata.ai.context.ContextPosition;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.resource.AbstractResource;
 import uno.anahata.ai.model.resource.TextFileResource;
@@ -22,9 +25,10 @@ import uno.anahata.ai.tool.AnahataToolkit;
  *
  * @author anahata
  */
-@AiToolkit("Tools for managing the context window: ")
-public class ContextWindow extends AnahataToolkit{
-    
+@AiToolkit("Tools for loading and managing local resources")
+@Slf4j
+public class Resources extends AnahataToolkit {
+
     @AiTool(value = "Removes the provided managed resources from the active workspace (RAG message).", retention = 0)
     public void unregisterResource(
             @AiToolParam("The absolute paths to the resources to unload.") List<String> resourceIds) throws Exception {
@@ -39,36 +43,20 @@ public class ContextWindow extends AnahataToolkit{
             }
         }
     }
-    
-    @AiTool(value = "Enables / disables context providers", retention = 0)
-    public void updateContextProviders(
-            @AiToolParam("Whether to enable or disable the providers.") boolean enabled, 
-            @AiToolParam("The IDs of the context providers to update.") List<String> providerIds) {
-        ContextManager cm = getChat().getContextManager();
-        for (ContextProvider cp : cm.getProviders()) {
-            if (providerIds.contains(cp.getId())) {
-                cp.setEnabled(enabled);
-                log((enabled ? "Enabled" : "Disabled") + " provider: " + cp.getName());
-            }
-        }
-    }
-    
-    
-    //@AiTool(value = "Loads a text file into the context as a managed resource.", retention = 0)
-    private String getConversationSummary(Chat chat) {
-        ContextManager cm = chat.getContextManager();
-        return "";
-    }
+
     
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        String chatHistory = "**Chat History**\n\n";
-        
+        for (AbstractResource resource : ragMessage.getChat().getResourceManager().getResources()) {
+            try {
+                if (resource.getContextPosition() == ContextPosition.PROMPT_AUGMENTATION) {
+                    // Delegate rendering to the resource itself
+                    resource.populate(ragMessage);
+                }
+            } catch (Exception e) {
+                log.error("Error processing managed resource {} for prompt augmentation", resource.getName(), e);
+            }
+        }
     }
 
-    @Override
-    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
-        return Collections.emptyList();
-    }
-    
 }

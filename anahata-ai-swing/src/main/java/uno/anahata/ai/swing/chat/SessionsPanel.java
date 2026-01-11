@@ -28,6 +28,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import lombok.NonNull;
 import lombok.Setter;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.swing.icons.CardsIcon;
@@ -54,15 +55,17 @@ public class SessionsPanel extends JPanel {
     private final JPanel cardContainer;
     private final JPanel mainView;
     private final CardLayout viewLayout;
+    private final AsiConfig asiConfig;
     
     private final Map<Chat, SessionCard> cachedCards = new HashMap<>();
     
     @Setter
     private SessionController controller;
 
-    public SessionsPanel() {
+    public SessionsPanel(@NonNull AsiConfig asiConfig) {
+        this.asiConfig = asiConfig;
         // 1. Initialize Final Fields First
-        this.model = new LiveSessionsTableModel();
+        this.model = new LiveSessionsTableModel(asiConfig);
         this.table = new JTable(model);
         this.cardContainer = new JPanel(new WrapLayout(WrapLayout.LEFT, 10, 10));
         this.viewLayout = new CardLayout();
@@ -202,25 +205,21 @@ public class SessionsPanel extends JPanel {
     }
 
     private void refreshCards() {
+        List<Chat> activeChats = asiConfig.getActiveChats();
         // 1. Remove cards for sessions no longer present
         cachedCards.keySet().removeIf(chat -> {
-            boolean exists = false;
-            for (int i = 0; i < model.getRowCount(); i++) {
-                if (model.getChatAt(i) == chat) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                cardContainer.remove(cachedCards.get(chat));
+            if (!activeChats.contains(chat)) {
+                SessionCard card = cachedCards.get(chat);
+                card.cleanup();
+                cardContainer.remove(card);
                 return true;
             }
             return false;
         });
 
         // 2. Add or update cards for current sessions
-        for (int i = 0; i < model.getRowCount(); i++) {
-            Chat chat = model.getChatAt(i);
+        for (int i = 0; i < activeChats.size(); i++) {
+            Chat chat = activeChats.get(i);
             SessionCard card = cachedCards.get(chat);
             if (card == null) {
                 card = new SessionCard(chat, controller);
@@ -233,7 +232,7 @@ public class SessionsPanel extends JPanel {
         }
 
         // 3. Clean up trailing components
-        while (cardContainer.getComponentCount() > model.getRowCount()) {
+        while (cardContainer.getComponentCount() > activeChats.size()) {
             cardContainer.remove(cardContainer.getComponentCount() - 1);
         }
 

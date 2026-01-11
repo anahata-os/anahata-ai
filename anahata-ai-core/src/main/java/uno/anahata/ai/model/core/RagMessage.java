@@ -20,6 +20,14 @@ public class RagMessage extends UserMessage {
         new TextPart(this, "**RAG Message (Live Workspace)**\n\n This message is dynamically generated at runtime (not written by the user) and populated by all enabled context providers after tool execution");
     }
     
+    /**
+     * Convenience method to add a text part to this RAG message.
+     * 
+     * @param text The text content to add.
+     */
+    public void addPart(String text) {
+        new TextPart(this, text);
+    }
 
     /**
      * Overrides the default pruning logic to declare that this message is
@@ -46,4 +54,11 @@ public class RagMessage extends UserMessage {
     public List<AbstractPart> getParts(boolean includePruned) {
         return getParts();
     }
+
+    @Override
+    public String getFrom() {
+        return "Java workspace";
+    }
+    
+    
 }

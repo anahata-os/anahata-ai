@@ -86,6 +86,15 @@ public abstract class AbstractMessage implements PropertyChangeSource {
      * @return The sender's identity (e.g., user name or model ID).
      */
     public abstract String getFrom();
+    
+    /**
+     * Whether this message is prunnable 
+     * 
+     * @return 
+     */
+    public boolean isPrunnableOrRemovable() {
+        return getChat() != null && getSequentialId() != 0;
+    }
 
     /**
      * Safely adds a single part to this message, establishing the bidirectional

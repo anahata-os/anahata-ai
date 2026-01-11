@@ -3,8 +3,6 @@
  */
 package uno.anahata.ai.chat;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,11 +24,11 @@ import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.AbstractToolMessage;
+import uno.anahata.ai.model.core.BasicPropertyChangeSource;
 import uno.anahata.ai.model.core.GenerationRequest;
 import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
-import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.StreamObserver;
@@ -56,7 +54,7 @@ import uno.anahata.ai.tool.ToolManager;
  */
 @Slf4j
 @Getter
-public class Chat implements PropertyChangeSource {
+public class Chat extends BasicPropertyChangeSource {
 
     private final ChatConfig config;
     private final ToolManager toolManager;
@@ -65,9 +63,6 @@ public class Chat implements PropertyChangeSource {
     private final ExecutorService executor;
     private final StatusManager statusManager;
     private final List<AbstractAiProvider> providers = new ArrayList<>();
-
-    /** Support for firing property change events. */
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
     /**
      * The currently selected model for the chat session.
@@ -116,6 +111,11 @@ public class Chat implements PropertyChangeSource {
      */
     private final ReentrantLock runningLock = new ReentrantLock();
 
+    /**
+     * A high-level summary of the conversation's current state or topic.
+     */
+    private String summary;
+
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
@@ -142,7 +142,7 @@ public class Chat implements PropertyChangeSource {
             }
         }
         
-        ChatRegistry.register(this);
+        config.getAsiConfig().register(this);
     }
 
     /**
@@ -605,46 +605,32 @@ public class Chat implements PropertyChangeSource {
     }
 
     /**
+     * Sets the summary for the session and fires a property change event.
+     * 
+     * @param summary The new summary.
+     */
+    public void setSummary(String summary) {
+        String old = this.summary;
+        this.summary = summary;
+        propertyChangeSupport.firePropertyChange("summary", old, summary);
+    }
+
+    /**
      * Gets a short version of the session ID.
      * 
      * @return The short session ID.
      */
     public String getShortId() {
         String id = config.getSessionId();
-        return id.length() > 7 ? id.substring(0, 7) : id;
+        return id.length() > 7 ? id.substring(id.length() - 7) : id;
     }
 
     public void shutdown() {
         shutdown.set(true);
         log.info("Shutting down Chat for session {}", config.getSessionId());
-        ChatRegistry.unregister(this);
+        config.getAsiConfig().unregister(this);
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }
     }
-
-    /**
-     * Adds a PropertyChangeListener to this chat session.
-     * 
-     * @param listener The listener to add.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this chat session.
-     * 
-     * @param listener The listener to remove.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public PropertyChangeSupport getPropertyChangeSupport() {
-        return propertyChangeSupport;
-    }
-
 }

@@ -6,7 +6,6 @@ package uno.anahata.ai.swing.chat;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -17,26 +16,24 @@ import javax.swing.SwingUtilities;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.chat.ChatRegistry;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
+import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 
 /**
  * The main container for the Anahata AI Swing UI, managing multiple chat sessions.
  * It provides a session list and a tabbed area for active chats.
- * <p>
- * This panel implements {@link ChatRegistry.ChatRegistryListener} to automatically
- * synchronize the tabbed pane with the global list of active sessions.
  * 
  * @author gemini-3-flash-preview
  */
 @Slf4j
-public class MainPanel extends JPanel implements SessionsPanel.SessionController, ChatRegistry.ChatRegistryListener {
+public class MainPanel extends JPanel implements SessionsPanel.SessionController {
 
     private final SessionsPanel sessionsPanel;
     private final JTabbedPane tabbedPane;
     private final SwingChatConfig baseConfig;
     private final List<Class<? extends AbstractAiProvider>> defaultProviders = new ArrayList<>();
-    private final PropertyChangeListener nicknameListener = this::handleNicknameChange;
+    
+    private final EdtPropertyChangeListener asiListener;
 
     /**
      * Constructs a new MainPanel.
@@ -49,7 +46,7 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
         
         setLayout(new BorderLayout());
 
-        sessionsPanel = new SessionsPanel();
+        sessionsPanel = new SessionsPanel(baseConfig.getAsiConfig());
         sessionsPanel.setController(this);
 
         tabbedPane = new JTabbedPane();
@@ -69,7 +66,7 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
         splitPane.setOneTouchExpandable(true);
         add(splitPane, BorderLayout.CENTER);
         
-        ChatRegistry.addListener(this);
+        this.asiListener = new EdtPropertyChangeListener(this, baseConfig.getAsiConfig(), "activeChats", this::handleAsiChange);
     }
 
     /**
@@ -78,18 +75,13 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
     public void start() {
         sessionsPanel.startRefresh();
         // Sync existing chats
-        for (Chat chat : ChatRegistry.getActiveChats()) {
-            chatRegistered(chat);
+        for (Chat chat : baseConfig.getAsiConfig().getActiveChats()) {
+            focus(chat);
         }
     }
 
     @Override
     public void focus(@NonNull Chat chat) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> focus(chat));
-            return;
-        }
-
         String id = chat.getConfig().getSessionId();
         log.info("Focusing session: {}", id);
         
@@ -109,41 +101,27 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
             panel.setName(id);
             panel.initComponents();
             
-            String title = chat.getNickname();
-            if (title == null || title.isEmpty()) {
-                title = id.substring(0, Math.min(id.length(), 8));
-            }
-            
-            tabbedPane.addTab(title, panel);
+            tabbedPane.addTab(chat.getNickname(), panel);
             tabIndex = tabbedPane.getTabCount() - 1;
             
             // Listen for nickname changes to update the tab title
-            chat.addPropertyChangeListener(nicknameListener);
+            new EdtPropertyChangeListener(this, chat, "nickname", this::handleNicknameChange);
         }
 
         tabbedPane.setSelectedIndex(tabIndex);
-        revalidate();
-        repaint();
     }
 
     @Override
     public void close(@NonNull Chat chat) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(() -> close(chat));
-            return;
-        }
-
         String id = chat.getConfig().getSessionId();
         log.info("Closing tab for session: {}", id);
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (id.equals(tabbedPane.getComponentAt(i).getName())) {
                 tabbedPane.removeTabAt(i);
-                chat.removePropertyChangeListener(nicknameListener);
+                // EdtPropertyChangeListener will be GC'd as it's not strongly held by the chat
                 break;
             }
         }
-        revalidate();
-        repaint();
     }
 
     @Override
@@ -156,39 +134,44 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
     @Override
     public void createNew() {
         log.info("Creating new session...");
-        SwingChatConfig newConfig = new SwingChatConfig(baseConfig.getAiConfig());
+        SwingChatConfig newConfig = new SwingChatConfig(baseConfig.getAsiConfig());
         newConfig.getProviderClasses().addAll(defaultProviders);
         Chat newChat = new Chat(newConfig);
-        // Chat constructor registers itself in ChatRegistry, which triggers chatRegistered
+        // Chat constructor registers itself in AsiConfig, which triggers property change
         focus(newChat);
     }
 
-    @Override
-    public void chatRegistered(Chat chat) {
-        log.info("Chat registered event received for: {}", chat.getConfig().getSessionId());
-        focus(chat);
-    }
-
-    @Override
-    public void chatUnregistered(Chat chat) {
-        log.info("Chat unregistered event received for: {}", chat.getConfig().getSessionId());
-        close(chat);
-    }
-
     private void handleNicknameChange(PropertyChangeEvent evt) {
-        if ("nickname".equals(evt.getPropertyName())) {
-            Chat chat = (Chat) evt.getSource();
-            String id = chat.getConfig().getSessionId();
-            String newNickname = (String) evt.getNewValue();
-            
-            SwingUtilities.invokeLater(() -> {
-                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                    if (id.equals(tabbedPane.getComponentAt(i).getName())) {
-                        tabbedPane.setTitleAt(i, newNickname);
-                        break;
-                    }
+        Chat chat = (Chat) evt.getSource();
+        String id = chat.getConfig().getSessionId();
+        String newNickname = (String) evt.getNewValue();
+        
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (id.equals(tabbedPane.getComponentAt(i).getName())) {
+                tabbedPane.setTitleAt(i, newNickname);
+                break;
+            }
+        }
+    }
+
+    private void handleAsiChange(PropertyChangeEvent evt) {
+        List<Chat> oldList = (List<Chat>) evt.getOldValue();
+        List<Chat> newList = (List<Chat>) evt.getNewValue();
+        
+        // Handle additions
+        for (Chat chat : newList) {
+            if (oldList == null || !oldList.contains(chat)) {
+                focus(chat);
+            }
+        }
+        
+        // Handle removals
+        if (oldList != null) {
+            for (Chat chat : oldList) {
+                if (!newList.contains(chat)) {
+                    close(chat);
                 }
-            });
+            }
         }
     }
 }

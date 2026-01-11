@@ -9,17 +9,15 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import uno.anahata.ai.model.tool.AbstractTool;
-import uno.anahata.ai.model.tool.AbstractToolkit;
 import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.swing.chat.ToolsPanel;
 
 /**
- * A panel that displays the details and controls for a selected AbstractToolkit or AbstractTool.
+ * A panel that displays the details and controls for a specific {@link AbstractTool}.
  *
  * @author anahata
  */
@@ -38,65 +36,13 @@ public class ToolDetailPanel extends JPanel {
     }
 
     /**
-     * Updates the panel to display the details for the given tree node.
+     * Updates the panel to display the details for the given tool.
      *
-     * @param node The selected node, which can be an AbstractToolkit, an AbstractTool, or null.
+     * @param tool The selected tool.
      */
-    public void setNode(Object node) {
+    public void setTool(AbstractTool tool) {
         removeAll();
 
-        if (node instanceof AbstractToolkit) {
-            add(createToolkitDetailPanel((AbstractToolkit) node), BorderLayout.NORTH);
-        } else if (node instanceof AbstractTool) {
-            add(createToolDetailPanel((AbstractTool) node), BorderLayout.NORTH);
-        }
-
-        revalidate();
-        repaint();
-    }
-
-    /**
-     * Creates and returns a JPanel containing the details and controls for a specific toolkit.
-     *
-     * @param toolkit The toolkit to display.
-     * @return A configured JPanel.
-     */
-    private JPanel createToolkitDetailPanel(AbstractToolkit toolkit) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("<html><b>Toolkit: " + toolkit.getName() + "</b></html>"));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1.0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(4, 8, 4, 8);
-
-        // Description
-        String descriptionText = "<html>" + toolkit.getDescription().replace("\n", "<br>") + "</html>";
-        panel.add(new JLabel(descriptionText), gbc);
-        gbc.gridy++;
-
-        // Enabled Checkbox
-        JCheckBox enabledCheckbox = new JCheckBox("Enabled", toolkit.isEnabled());
-        enabledCheckbox.addActionListener(e -> {
-            toolkit.setEnabled(enabledCheckbox.isSelected());
-            parentPanel.refresh();
-        });
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.WEST;
-        panel.add(enabledCheckbox, gbc);
-
-        return panel;
-    }
-
-    /**
-     * Creates and returns a JPanel containing the details and controls for a specific tool.
-     *
-     * @param tool The tool to display.
-     * @return A configured JPanel.
-     */
-    private JPanel createToolDetailPanel(AbstractTool tool) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("<html><b>Tool: " + tool.getName() + "</b></html>"));
 
@@ -118,7 +64,10 @@ public class ToolDetailPanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         panel.add(createPermissionButtonGroup(tool), gbc);
 
-        return panel;
+        add(panel, BorderLayout.NORTH);
+
+        revalidate();
+        repaint();
     }
 
     /**

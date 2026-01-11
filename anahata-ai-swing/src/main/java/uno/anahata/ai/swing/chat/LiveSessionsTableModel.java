@@ -3,24 +3,29 @@
  */
 package uno.anahata.ai.swing.chat;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
+import lombok.NonNull;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.chat.ChatRegistry;
 import uno.anahata.ai.status.ChatStatus;
 
 /**
  * A reusable table model for displaying active AI chat sessions.
- * This model tracks the {@link ChatRegistry} and provides real-time updates
+ * This model tracks the {@link AsiConfig} and provides real-time updates
  * on session status, message count, and context usage.
  * 
  * @author gemini-3-flash-preview
  */
-public class LiveSessionsTableModel extends AbstractTableModel implements ChatRegistry.ChatRegistryListener {
+public class LiveSessionsTableModel extends AbstractTableModel {
 
     private final List<Chat> sessions = new ArrayList<>();
-    private final String[] columnNames = {"Session", "ID", "Status", "Messages", "Context %"};
+    private final String[] columnNames = {"Nickname", "ID", "Status", "Msgs", "Context %"};
+    private final AsiConfig asiConfig;
+    private final PropertyChangeListener asiListener = this::handleAsiChange;
 
     public static final int SESSION_COL = 0;
     public static final int ID_COL = 1;
@@ -28,9 +33,10 @@ public class LiveSessionsTableModel extends AbstractTableModel implements ChatRe
     public static final int MESSAGES_COL = 3;
     public static final int CONTEXT_COL = 4;
 
-    public LiveSessionsTableModel() {
+    public LiveSessionsTableModel(@NonNull AsiConfig asiConfig) {
+        this.asiConfig = asiConfig;
         refresh();
-        ChatRegistry.addListener(this);
+        asiConfig.addPropertyChangeListener(asiListener);
     }
 
     @Override
@@ -86,10 +92,10 @@ public class LiveSessionsTableModel extends AbstractTableModel implements ChatRe
     }
 
     /**
-     * Refreshes the table model by synchronizing with the {@link ChatRegistry}.
+     * Refreshes the table model by synchronizing with the {@link AsiConfig}.
      */
     public final void refresh() {
-        List<Chat> activeChats = ChatRegistry.getActiveChats();
+        List<Chat> activeChats = asiConfig.getActiveChats();
         
         // Identify removed sessions
         for (int i = sessions.size() - 1; i >= 0; i--) {
@@ -121,17 +127,13 @@ public class LiveSessionsTableModel extends AbstractTableModel implements ChatRe
         return null;
     }
 
-    @Override
-    public void chatRegistered(Chat chat) {
-        refresh();
-    }
-
-    @Override
-    public void chatUnregistered(Chat chat) {
-        refresh();
+    private void handleAsiChange(PropertyChangeEvent evt) {
+        if ("activeChats".equals(evt.getPropertyName())) {
+            refresh();
+        }
     }
     
     public void dispose() {
-        ChatRegistry.removeListener(this);
+        asiConfig.removePropertyChangeListener(asiListener);
     }
 }

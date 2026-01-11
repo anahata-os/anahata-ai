@@ -13,8 +13,10 @@ import lombok.Setter;
 import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
+import uno.anahata.ai.toolkit.Session;
 import uno.anahata.ai.toolkit.Files;
 import uno.anahata.ai.toolkit.Java;
+import uno.anahata.ai.toolkit.Resources;
 
 /**
  * A model-agnostic, intelligent configuration object for a single chat session.
@@ -26,7 +28,7 @@ public class ChatConfig {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
-    private final AsiConfig aiConfig;
+    private final AsiConfig asiConfig;
 
     /** The unique identifier for this specific chat session. */
     @NonNull
@@ -56,32 +58,34 @@ public class ChatConfig {
         // Pre-populate with core, essential tools.
         toolClasses.add(Files.class);
         toolClasses.add(Java.class);
+        toolClasses.add(Session.class);
+        toolClasses.add(Resources.class);
     }
 
     /**
      * Constructs a new ChatConfig with a randomly generated session ID.
      * 
-     * @param aiConfig The global AI configuration.
+     * @param asiConfig The global AI configuration.
      */
-    public ChatConfig(@NonNull AsiConfig aiConfig) {
-        this(aiConfig, UUID.randomUUID().toString());
+    public ChatConfig(@NonNull AsiConfig asiConfig) {
+        this(asiConfig, UUID.randomUUID().toString());
     }
 
     /**
      * Constructs a new ChatConfig with a specific session ID.
      * 
-     * @param aiConfig The global AI configuration.
+     * @param asiConfig The global AI configuration.
      * @param sessionId The unique session ID.
      */
-    public ChatConfig(@NonNull AsiConfig aiConfig, @NonNull String sessionId) {
-        this.aiConfig = aiConfig;
+    public ChatConfig(@NonNull AsiConfig asiConfig, @NonNull String sessionId) {
+        this.asiConfig = asiConfig;
         this.sessionId = sessionId;
     }
 
     /** The default request configuration for this chat session. Lazily initialized. */
     private RequestConfig requestConfig;
     
-    //<editor-fold defaultstate="collapsed" desc="Chat Loop">
+    //<editor-fold defaultstate="collapsed" desc="Session Loop">
     /** If true, local Java tools are enabled. */
     @Setter(AccessLevel.NONE)
     private boolean localToolsEnabled = true;
@@ -178,6 +182,6 @@ public class ChatConfig {
      * @return The host application ID.
      */
     public String getHostApplicationId() {
-        return aiConfig.getHostApplicationId();
+        return asiConfig.getHostApplicationId();
     }
 }

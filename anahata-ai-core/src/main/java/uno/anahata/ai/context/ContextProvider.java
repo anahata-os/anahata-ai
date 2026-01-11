@@ -62,8 +62,13 @@ public interface ContextProvider {
      */
     void populateMessage(RagMessage ragMessage) throws Exception;
     
+    /**
+     * Provides a machine readable header for this context provider
+     * 
+     * @return 
+     */
     public default String getHeader() {
-        return "Context Provider Id:**" + getId() + "**\n"
+        return "### Context Provider Id:**" + getId() + "**\n"
                 + "Name:" + getName()+ "\n"
                 + "Description:" + getDescription()+ "\n"
                 + "Enabled:" + isEnabled();

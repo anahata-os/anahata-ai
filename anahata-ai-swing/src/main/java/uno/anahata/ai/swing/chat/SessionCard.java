@@ -9,11 +9,14 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.ai.chat.Chat;
@@ -32,13 +35,16 @@ public class SessionCard extends JPanel {
 
     private final Chat chat;
     private final SessionsPanel.SessionController controller;
+    private final JLabel nameLabel;
+    private final JLabel summaryLabel;
+    private final PropertyChangeListener chatListener = this::handleChatChange;
 
     public SessionCard(@NonNull Chat chat, @NonNull SessionsPanel.SessionController controller) {
         this.chat = chat;
         this.controller = controller;
 
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(200, 160));
+        setPreferredSize(new Dimension(220, 180));
         setBackground(new Color(255, 253, 208)); // Pale yellow "sticky note" color
         
         // Subtle "shadow" effect via compound border
@@ -54,7 +60,7 @@ public class SessionCard extends JPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         
-        JLabel nameLabel = new JLabel(chat.getNickname());
+        nameLabel = new JLabel(chat.getNickname());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 14f));
         header.add(nameLabel, BorderLayout.CENTER);
 
@@ -68,15 +74,20 @@ public class SessionCard extends JPanel {
 
         add(header, BorderLayout.NORTH);
 
-        // Content: Status and Metrics
-        JPanel content = new JPanel(new MigLayout("fillx, insets 0, gap 4", "[grow]", "[]0[]0[]"));
+        // Content: Status, Summary and Metrics
+        JPanel content = new JPanel(new MigLayout("fillx, insets 0, gap 4", "[grow]", "[]0[]5[]0[]"));
         content.setOpaque(false);
 
         ChatStatus status = chat.getStatusManager().getCurrentStatus();
         JLabel statusLabel = new JLabel(status.getDisplayName());
         statusLabel.setForeground(SwingChatConfig.getColor(status));
-        statusLabel.setFont(statusLabel.getFont().deriveFont(Font.ITALIC, 12f));
+        statusLabel.setFont(statusLabel.getFont().deriveFont(Font.ITALIC, 11f));
         content.add(statusLabel, "wrap");
+
+        summaryLabel = new JLabel("<html><i>" + (chat.getSummary() != null ? chat.getSummary() : "No summary available.") + "</i></html>");
+        summaryLabel.setFont(summaryLabel.getFont().deriveFont(11f));
+        summaryLabel.setForeground(new Color(80, 80, 50));
+        content.add(summaryLabel, "growx, wrap, h 40!");
 
         content.add(new JLabel("Messages: " + chat.getContextManager().getHistory().size()), "wrap");
         
@@ -124,5 +135,20 @@ public class SessionCard extends JPanel {
                 setBackground(new Color(255, 253, 208));
             }
         });
+        
+        chat.addPropertyChangeListener(chatListener);
+    }
+
+    private void handleChatChange(PropertyChangeEvent evt) {
+        String prop = evt.getPropertyName();
+        if ("nickname".equals(prop)) {
+            SwingUtilities.invokeLater(() -> nameLabel.setText((String) evt.getNewValue()));
+        } else if ("summary".equals(prop)) {
+            SwingUtilities.invokeLater(() -> summaryLabel.setText("<html><i>" + evt.getNewValue() + "</i></html>"));
+        }
+    }
+    
+    public void cleanup() {
+        chat.removePropertyChangeListener(chatListener);
     }
 }

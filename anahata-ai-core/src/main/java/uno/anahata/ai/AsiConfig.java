@@ -7,8 +7,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.model.core.BasicPropertyChangeSource;
 
 /**
  * A hybrid static/instance class for managing global and application-specific configurations.
@@ -22,9 +27,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public class AsiConfig {
+public class AsiConfig extends BasicPropertyChangeSource {
     private final String hostApplicationId;
     private final Preferences preferences;
+    private final List<Chat> activeChats = new ArrayList<>();
 
     /**
      * Creates a configuration instance for a specific host application.
@@ -69,6 +75,40 @@ public class AsiConfig {
             log.error("Could not create application subdirectory: {}", dir, e);
         }
         return dir;
+    }
+
+    /**
+     * Registers a new chat session with this configuration.
+     * 
+     * @param chat The chat session to register.
+     */
+    public void register(Chat chat) {
+        List<Chat> old = new ArrayList<>(activeChats);
+        activeChats.add(chat);
+        propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
+        log.info("Registered chat session: {}", chat.getConfig().getSessionId());
+    }
+
+    /**
+     * Unregisters a chat session from this configuration.
+     * 
+     * @param chat The chat session to unregister.
+     */
+    public void unregister(Chat chat) {
+        List<Chat> old = new ArrayList<>(activeChats);
+        if (activeChats.remove(chat)) {
+            propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
+            log.info("Unregistered chat session: {}", chat.getConfig().getSessionId());
+        }
+    }
+
+    /**
+     * Gets an unmodifiable list of all active chat sessions.
+     * 
+     * @return The list of active chats.
+     */
+    public List<Chat> getActiveChats() {
+        return Collections.unmodifiableList(activeChats);
     }
 
     // --- STATIC METHODS FOR GLOBAL ACCESS ---

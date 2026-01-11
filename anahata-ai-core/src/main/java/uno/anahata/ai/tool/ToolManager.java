@@ -65,7 +65,7 @@ public class ToolManager {
      */
     public ToolManager(@NonNull Chat chat) {
         this.chat = chat;
-        this.config = chat.getConfig().getAiConfig();
+        this.config = chat.getConfig().getAsiConfig();
         
         // Self-initialize by registering tools from the config.
         List<Class<?>> toolClasses = chat.getConfig().getToolClasses();

@@ -25,8 +25,10 @@ import uno.anahata.ai.tool.AiToolParam;
 @Slf4j
 public class Files extends AnahataToolkit {
 
+    @AiTool(value = "Updates the viewport of a TextFileResource ", retention = 0)
     public void updateTextFileViewport(
-            @AiToolParam("The absolute paths to the text files.") String resourceId, @AiToolParam("The new view port for the text file") TextViewport newViewPort) throws Exception {
+            @AiToolParam("The absolute paths to the text files.") String resourceId, 
+            @AiToolParam("The new view port for the text file") TextViewport newViewPort) throws Exception {
         TextFileResource tfr = getResourceManager().getResource(resourceId);
         tfr.setViewport(newViewPort);
         tfr.reload();
@@ -43,7 +45,7 @@ public class Files extends AnahataToolkit {
      * I/O error occurs.
      */
     @AiTool(value = "Loads a text file into the context as a managed resource.", retention = 0)
-    public List<TextFileResource> loadTextFileResources(
+    public List<TextFileResource> loadTextFile(
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
 
         List<TextFileResource> ret = new ArrayList<>(resourcePaths.size());
@@ -51,7 +53,7 @@ public class Files extends AnahataToolkit {
         for (String path : resourcePaths) {
             try {
                 log("Loading " + path + "...");
-                ret.add(loadTextFile(path));
+                ret.add(Files.this.loadTextFile(path));
                 log("Loaded OK " + path);
             } catch (Exception e) {
                 log.error("Exception loading text file resource", e);

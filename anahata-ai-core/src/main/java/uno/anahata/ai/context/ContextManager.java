@@ -79,7 +79,6 @@ public class ContextManager implements PropertyChangeSource {
             registerContextProvider(cp);
         }
         
-        registerContextProvider(chat.getResourceManager());
     }
     
     /**
@@ -118,7 +117,7 @@ public class ContextManager implements PropertyChangeSource {
             String providerChunk = provider.getHeader();
             if (provider.isEnabled()) {                                
                 try {                  
-                    List<String> systemInstructions = provider.getSystemInstructions(chat);                    
+                    List<String> systemInstructions = provider.getSystemInstructions(chat);
                     for (String string : systemInstructions) {
                         providerChunk+= "\n" + string;
                     }
